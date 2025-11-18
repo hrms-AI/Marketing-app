@@ -42,7 +42,7 @@
     },
     "quickapp" : {},
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "touristappid",
         "setting" : {
             "urlCheck" : false
         },
