@@ -1,0 +1,17 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uv-(.*)": "@climblee/uv-ui/components/uv-$1/uv-$1.vue"
+    }
+  },
+  "dependencies": {
+    "@climblee/uv-ui": "^1.1.20",
+    "uview-ui": "^2.0.38",
+    "vue": "^2.7.16"
+  },
+  "devDependencies": {
+    "less": "^4.4.0",
+    "less-loader": "^12.3.0"
+  }
+}

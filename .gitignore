@@ -1,0 +1,67 @@
+# 依赖目录
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# 编译和构建输出
+unpackage/
+dist/
+*.log
+
+# 开发工具配置
+.hbuilderx/
+.history/
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+*.log
+
+# 环境配置文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 微信小程序相关
+.wxss.map
+
+# uni-app 特定文件
+# 如果使用 HBuilderX 开发，可能需要忽略以下文件
+manifest.json.bak
+pages.json.bak
+
+# 测试覆盖率
+coverage/
+*.lcov
+
+# 错误日志
+error.log
+debug.log
+
+# 备份文件
+*.bak
+*.backup
+*~

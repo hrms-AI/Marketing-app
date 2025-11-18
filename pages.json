@@ -1,0 +1,70 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^status-bar$": "@/components/status-bar/index.vue",
+      "^top-navbar$": "@/components/top-navbar/index.vue",
+      "^bottom-tabbar$": "@/components/bottom-tabbar/index.vue",
+      "^price-strategy$": "@/components/price-strategy/index.vue",
+      "^team-inquiry$": "@/components/team-inquiry/index.vue",
+      "^revenue-report$": "@/components/revenue-report/index.vue",
+      "^hotel-dropdown$": "@/components/hotel-dropdown/index.vue",
+      "^qiun-data-charts$": "@/uni_modules/qiun-data-charts/components/qiun-data-charts/qiun-data-charts.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/main/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/report/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/team/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/team/inquiry",
+      "style": {
+        "navigationBarTitleText": "团队询价",
+        "navigationBarTextStyle": "black",
+        "navigationBarBackgroundColor": "#f8f8f8"
+      }
+    },
+    {
+      "path": "pages/strategy/strategy",
+      "style": {
+        "navigationBarTitleText": "策略执行",
+        "navigationBarTextStyle": "black",
+        "navigationBarBackgroundColor": "#fff6f0"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "uni-app",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "uniIdRouter": {}
+}
