@@ -166,10 +166,15 @@ export default {
       } catch (error) {
         console.error('登录请求异常:', error);
         
-        // 网络异常处理
+        // HTTP状态码错误已经在请求拦截器中统一处理了，这里主要处理网络异常
         let errorMessage = '网络异常，请检查网络连接';
         
-        if (error.errMsg) {
+        // 处理业务逻辑错误
+        if (error.data && error.data.message) {
+          errorMessage = error.data.message;
+        }
+        // 处理网络错误
+        else if (error.errMsg) {
           if (error.errMsg.includes('timeout')) {
             errorMessage = '请求超时，请重试';
           } else if (error.errMsg.includes('fail')) {
@@ -179,11 +184,14 @@ export default {
           }
         }
         
-        uni.showToast({
-          title: errorMessage,
-          icon: 'none',
-          duration: 2500
-        });
+        // 如果是HTTP状态码错误，说明已经在拦截器中显示过toast了，这里就不重复显示
+        if (!error.statusCode) {
+          uni.showToast({
+            title: errorMessage,
+            icon: 'none',
+            duration: 2500
+          });
+        }
       } finally {
         this.isLoading = false;
       }

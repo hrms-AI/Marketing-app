@@ -161,16 +161,24 @@ class Request {
    */
   handleHttpError(statusCode) {
     let message = '网络异常，请稍后重试'
+    let shouldRedirectToLogin = false
+    
+    // 检查当前页面
+    const pages = getCurrentPages()
+    const currentPage = pages[pages.length - 1]
+    const isLoginPage = currentPage && currentPage.route && 
+                       (currentPage.route.includes('/login') || currentPage.route.includes('/pages/login'))
     
     switch (statusCode) {
       case HTTP_STATUS.UNAUTHORIZED:
-        message = '登录已过期，请重新登录'
-        // 清除token并跳转到登录页
-        uni.removeStorageSync(constants.STORAGE_KEYS.TOKEN)
-        uni.removeStorageSync(constants.STORAGE_KEYS.USER_INFO)
-        uni.reLaunch({
-          url: constants.PAGE_PATHS.LOGIN
-        })
+        if (isLoginPage) {
+          // 在登录页面的401错误，说明账号密码错误
+          message = '账号或密码错误，请重新输入'
+        } else {
+          // 非登录页面的401错误，说明token过期
+          message = '登录已过期，请重新登录'
+          shouldRedirectToLogin = true
+        }
         break
       case HTTP_STATUS.FORBIDDEN:
         message = '没有权限访问'
@@ -185,11 +193,25 @@ class Request {
         message = `网络错误：${statusCode}`
     }
 
+    // 显示错误提示
     uni.showToast({
       title: message,
       icon: 'none',
-      duration: 2000
+      duration: 2500
     })
+
+    // 如果需要跳转到登录页
+    if (shouldRedirectToLogin) {
+      // 清除token并跳转到登录页
+      uni.removeStorageSync(constants.STORAGE_KEYS.TOKEN)
+      uni.removeStorageSync(constants.STORAGE_KEYS.USER_INFO)
+      
+      setTimeout(() => {
+        uni.reLaunch({
+          url: constants.PAGE_PATHS.LOGIN
+        })
+      }, 2500)
+    }
   }
 
   /**
