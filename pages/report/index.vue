@@ -115,7 +115,7 @@ export default {
 <style scoped>
 .report-bg {
   min-height: 100vh;
-  background: linear-gradient(180deg, #ffeee6 0%, #fff 50%);
+  background: linear-gradient(180deg, #e3f2fd 0%, #fff 50%);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -147,7 +147,7 @@ export default {
   font-weight: 400;
 }
 .tab-text.active {
-  color: #ff7d00;
+  color: #42a5f5;
   font-weight: 600;
 }
 .tab-underline {
@@ -157,7 +157,7 @@ export default {
   transform: translateX(-50%);
   width: 80rpx;
   height: 6rpx;
-  background: #ff7d00;
+  background: #42a5f5;
   border-radius: 3rpx;
 }
 
@@ -186,7 +186,7 @@ export default {
   border-radius: 4rpx;
 }
 .label-line.orange {
-  background: #ff7d00;
+  background: #42a5f5;
 }
 .label-line.blue {
   background: #2196f3;
@@ -244,7 +244,7 @@ export default {
   transition: all 0.3s ease;
 }
 .period-tab.active {
-  background: #ff7d00;
+  background: #42a5f5;
 }
 .period-text {
   font-size: 28rpx;

@@ -297,7 +297,7 @@ export default {
 }
 
 .tab-item.active {
-  background: #ff7d00;
+  background: #42a5f5;
 }
 
 .tab-text {
@@ -343,7 +343,7 @@ export default {
 }
 
 .bottom-tab.active {
-  border-top: 4rpx solid #ff7d00;
+  border-top: 4rpx solid #42a5f5;
 }
 
 .bottom-tab .tab-text {
@@ -352,7 +352,7 @@ export default {
 }
 
 .bottom-tab.active .tab-text {
-  color: #ff7d00;
+  color: #42a5f5;
   font-weight: 600;
 }
 .control-buttons {
@@ -375,8 +375,8 @@ export default {
 }
 
 .control-btn.active {
-  background: #ff7d00;
-  border-color: #ff7d00;
+  background: #42a5f5;
+  border-color: #42a5f5;
 }
 
 .control-btn .iconfont {
@@ -453,7 +453,7 @@ export default {
 .price-value {
   font-size: 36rpx;
   font-weight: 600;
-  color: #ff7d00;
+  color: #42a5f5;
   margin-left: 10rpx;
 }
 
@@ -481,7 +481,7 @@ export default {
 }
 
 .price-input:focus {
-  border-color: #ff7d00;
+  border-color: #42a5f5;
   background: #fff;
 }
 
@@ -514,7 +514,7 @@ export default {
 .save-btn {
   width: 100%;
   height: 80rpx;
-  background: #ff7d00;
+  background: #42a5f5;
   border-radius: 12rpx;
   display: flex;
   align-items: center;
