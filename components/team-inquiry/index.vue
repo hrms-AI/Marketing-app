@@ -81,7 +81,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .team-inquiry {
   padding: 32rpx;
 }

@@ -9,6 +9,8 @@
       "^team-inquiry$": "@/components/team-inquiry/index.vue",
       "^revenue-report$": "@/components/revenue-report/index.vue",
       "^hotel-dropdown$": "@/components/hotel-dropdown/index.vue",
+      "^marketing-calendar$": "@/components/marketing-calendar/index.vue",
+      "^uv-(.*)$": "@/uni_modules/uv-$1/components/uv-$1/uv-$1.vue",
       "^qiun-data-charts$": "@/uni_modules/qiun-data-charts/components/qiun-data-charts/qiun-data-charts.vue"
     }
   },
@@ -20,13 +22,19 @@
       }
     },
     {
-      "path": "pages/main/index",
+      "path": "pages/strategy/index",
       "style": {
         "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/index/index",
+      "path": "pages/ai-generate-form/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/team/index",
       "style": {
         "navigationStyle": "custom"
       }
@@ -38,7 +46,7 @@
       }
     },
     {
-      "path": "pages/team/index",
+      "path": "pages/marketing-plan/index",
       "style": {
         "navigationStyle": "custom"
       }
@@ -60,11 +68,19 @@
       }
     }
   ],
+
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "uni-app",
+    "navigationBarTitleText": "营销助手",
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "minified": true
+    }
   },
   "uniIdRouter": {}
 }

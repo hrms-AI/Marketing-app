@@ -47,7 +47,7 @@ export default {
 <style scoped>
 .material-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #e3f2fd 0%, #fff 50%);
+  background: linear-gradient(180deg, #f0f8ff 0%, #fff 60%);
   position: relative;
   overflow: hidden;
 }
@@ -85,7 +85,7 @@ export default {
 }
 
 .category-tab.active {
-  background: #42a5f5;
+  background: #5dade2;
 }
 
 .category-text {

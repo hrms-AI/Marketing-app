@@ -48,7 +48,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .price-strategy {
   padding: 32rpx;
 }

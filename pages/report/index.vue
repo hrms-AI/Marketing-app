@@ -1,26 +1,43 @@
 <template>
-  <view class="report-bg">
-    <view class="report-content">
-      <!-- Tab切换 -->
-      <view class="report-tabs">
-        <view class="tab-item" @click="switchTab('marketing')">
-          <text class="tab-text" :class="{'active': activeTab === 'marketing'}">营销报告</text>
-          <view v-if="activeTab === 'marketing'" class="tab-underline"></view>
-        </view>
-        <view class="tab-item" @click="switchTab('revenue')">
-          <text class="tab-text" :class="{'active': activeTab === 'revenue'}">收益报告</text>
-          <view v-if="activeTab === 'revenue'" class="tab-underline"></view>
-        </view>
-      </view>
+  <view class="app-container">
+    <!-- 状态栏 -->
+    <status-bar />
+    
+    <!-- 顶部导航栏 -->
+    <top-navbar 
+      title="报告" 
+      :show-back="false"
+      :show-logo="false"
+    />
 
+    <!-- 主要内容区 -->
+    <view class="app-content">
+      <view class="report-bg">
+    <view class="report-content">
       <!-- 数据统计卡片区域 -->
       <view class="stats-grid">
         <view class="stats-card">
           <view class="stats-label">
             <view class="label-line orange"></view>
+            <text class="label-text">浏览量</text>
+          </view>
+          <text class="stats-number">{{ statsData.viewCount.toLocaleString() }}</text>
+        </view>
+        
+        <view class="stats-card">
+          <view class="stats-label">
+            <view class="label-line blue"></view>
+            <text class="label-text">加私客户</text>
+          </view>
+          <text class="stats-number">{{ statsData.privateCustomer }}</text>
+        </view>
+        
+        <view class="stats-card">
+          <view class="stats-label">
+            <view class="label-line orange"></view>
             <text class="label-text">企微客户</text>
           </view>
-          <text class="stats-number">20</text>
+          <text class="stats-number">{{ statsData.wechatCustomer }}</text>
         </view>
         
         <view class="stats-card">
@@ -28,7 +45,7 @@
             <view class="label-line blue"></view>
             <text class="label-text">卡券发放</text>
           </view>
-          <text class="stats-number">15</text>
+          <text class="stats-number">{{ statsData.couponIssued }}</text>
         </view>
         
         <view class="stats-card">
@@ -36,7 +53,7 @@
             <view class="label-line orange"></view>
             <text class="label-text">核销总数</text>
           </view>
-          <text class="stats-number">30</text>
+          <text class="stats-number">{{ statsData.couponUsed }}</text>
         </view>
         
         <view class="stats-card">
@@ -44,7 +61,7 @@
             <view class="label-line blue"></view>
             <text class="label-text">复购销售</text>
           </view>
-          <text class="stats-number">47</text>
+          <text class="stats-number">{{ statsData.repeatSales }}</text>
         </view>
       </view>
 
@@ -75,7 +92,15 @@
         </view>
       </view>
 
+        </view>
+      </view>
     </view>
+
+    <!-- 底部导航栏 -->
+    <bottom-tabbar 
+      :current-tab="'report'"
+      @tab-change="handleTabChange"
+    />
   </view>
 </template>
 
@@ -87,16 +112,36 @@ export default {
       activeTab: 'marketing',
       activePeriod: 'week',
       yearMonthOptions: ['2025/01', '2025/02', '2025/03', '2025/04', '2025/05', '2025/06', '2025/07', '2025/08', '2025/09', '2025/10', '2025/11', '2025/12'],
-      yearMonthIndex: 2, // 2025/03
+      yearMonthIndex: 10, // 2025/11 (当前月)
+      
+      // 统计数据
+      statsData: {
+        viewCount: 1247,      // 浏览量
+        privateCustomer: 89,  // 加私客户
+        wechatCustomer: 20,   // 企微客户
+        couponIssued: 15,     // 卡券发放
+        couponUsed: 30,       // 核销总数
+        repeatSales: 47       // 复购销售
+      },
       
       // 报告内容列表
       reportList: [
-        '报告内容报告内容报告内容报告内容报告内容报告内容...',
-        '报告内容报告内容报告内容报告内容报告内容报告内容...',
-        '报告内容报告内容报告内容报告内容报告内容报告内容...',
-        '报告内容报告内容报告内容报告内容报告内容报告内容'
       ]
     }
+  },
+  mounted() {
+    // 检查登录状态
+    const token = this.$utils?.user?.getToken ? this.$utils.user.getToken() : uni.getStorageSync('token');
+    if (!token) {
+      // 未登录，重定向到登录页
+      uni.reLaunch({
+        url: '/pages/login/index'
+      });
+      return;
+    }
+    
+    // 加载初始统计数据
+    this.loadStatsData();
   },
   methods: {
     switchTab(tab) {
@@ -107,15 +152,60 @@ export default {
     },
     onYearMonthChange(e) {
       this.yearMonthIndex = e.detail.value;
+      this.loadStatsData();
+    },
+    
+    // 加载统计数据
+    loadStatsData() {
+      // 模拟根据选择的年月加载不同的统计数据
+      const selectedYearMonth = this.yearMonthOptions[this.yearMonthIndex];
+      console.log('加载统计数据:', selectedYearMonth);
+      
+      // 生成模拟数据（实际项目中这里应该调用API）
+      this.statsData = {
+        viewCount: Math.floor(Math.random() * 2000) + 800,     // 浏览量 800-2800
+        privateCustomer: Math.floor(Math.random() * 100) + 50, // 加私客户 50-150
+        wechatCustomer: Math.floor(Math.random() * 50) + 10,   // 企微客户 10-60
+        couponIssued: Math.floor(Math.random() * 30) + 10,     // 卡券发放 10-40
+        couponUsed: Math.floor(Math.random() * 40) + 20,       // 核销总数 20-60
+        repeatSales: Math.floor(Math.random() * 60) + 30       // 复购销售 30-90
+      };
+    },
+    
+    // 底部导航切换处理(由 bottom-tabbar 组件处理跳转)
+    handleTabChange(tabKey) {
+      // 跳转逻辑已在 bottom-tabbar 组件中处理,这里只需要接收事件
+      console.log('切换到:', tabKey);
     }
   }
 }
 </script>
 
 <style scoped>
+/* 应用容器 */
+.app-container {
+  min-height: 100vh;
+  max-height: 100vh;
+  background: linear-gradient(180deg, #f0f8ff 0%, #fff 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 主要内容区 */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 215rpx; /* 状态栏60rpx + 导航栏88rpx + 间距67rpx */
+  padding-bottom: 140rpx; /* 底部导航栏120rpx + 间距20rpx */
+  height: calc(100vh - 355rpx);
+}
+
 .report-bg {
   min-height: 100vh;
-  background: linear-gradient(180deg, #e3f2fd 0%, #fff 50%);
+  background: linear-gradient(180deg, #f0f8ff 0%, #fff 60%);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -147,7 +237,7 @@ export default {
   font-weight: 400;
 }
 .tab-text.active {
-  color: #42a5f5;
+  color: #5dade2;
   font-weight: 600;
 }
 .tab-underline {
@@ -157,7 +247,7 @@ export default {
   transform: translateX(-50%);
   width: 80rpx;
   height: 6rpx;
-  background: #42a5f5;
+  background: #5dade2;
   border-radius: 3rpx;
 }
 
@@ -186,7 +276,7 @@ export default {
   border-radius: 4rpx;
 }
 .label-line.orange {
-  background: #42a5f5;
+  background: #5dade2;
 }
 .label-line.blue {
   background: #2196f3;
@@ -244,7 +334,7 @@ export default {
   transition: all 0.3s ease;
 }
 .period-tab.active {
-  background: #42a5f5;
+  background: #5dade2;
 }
 .period-text {
   font-size: 28rpx;

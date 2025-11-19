@@ -16,7 +16,7 @@ const CURRENT_ENV = ENV_TYPE.DEV
 // 不同环境的配置
 const ENV_CONFIG = {
   [ENV_TYPE.DEV]: {
-    BASE_URL: 'http://localhost:5001',
+    BASE_URL: 'http://172.16.4.176:5001',
     TIMEOUT: 15000,
     DEBUG: true,
     LOG_LEVEL: 'debug'
@@ -64,7 +64,7 @@ export const constants = {
   // 页面路径
   PAGE_PATHS: {
     LOGIN: '/pages/login/index',
-    INDEX: '/pages/index/index',
+    STRATEGY: '/pages/strategy/index',
     TEAM: '/pages/team/index',
     REPORT: '/pages/report/index'
   },

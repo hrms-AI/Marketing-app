@@ -144,10 +144,10 @@ export default {
             duration: 1500
           });
           
-          // 延迟跳转到主页面
+          // 延迟跳转到策略页面
           setTimeout(() => {
             uni.reLaunch({
-              url: '/pages/main/index'
+              url: '/pages/strategy/index'
             });
           }, 1500);
           
@@ -200,149 +200,190 @@ export default {
 }
 </script>
 
-<!-- tailwindcss + 玻璃拟态 + 亮色风格，UI层无业务逻辑 -->
-<style scoped>
-/* 背景渐变和居中 */
+<!-- SCSS + 玻璃拟态 + 亮色风格，UI层无业务逻辑 -->
+<style scoped lang="scss">
+// 引入全局变量
+@import '@/static/styles/variables.scss';
+
+// 主容器 - 使用SCSS嵌套结构
 .login-bg {
   min-height: 100vh;
- 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  background: linear-gradient(180deg, #e8f4ff 0%, #f0f8ff 50%, #fff 100%);
+  background: linear-gradient(180deg, #e8f4ff 0%, #f0f8ff 50%, $bg-white 100%);
   position: relative;
-}
-.login-logo-box {
-  margin-top: 190rpx;
-  margin-bottom: 40rpx;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.login-logo {
-  width: 180rpx;
-  height: 180rpx;
-  border-radius: 32rpx;
-  background: rgba(255,255,255,0.6);
-  box-shadow: 0 8rpx 32rpx 0 rgba(0,0,0,0.08);
-  backdrop-filter: blur(8rpx);
-}
-.login-title {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #222;
-  margin-bottom: 48rpx;
-}
-.login-form {
-  width: 80vw;
-  max-width: 600rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 32rpx;
-}
-.login-input-box {
-  display: flex;
-  align-items: center;
-  background: rgba(255,255,255,0.8);
-  border-radius: 999rpx;
-  padding: 0 32rpx;
-  height: 88rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 8rpx 0 rgba(0,0,0,0.04);
-}
-.login-icon {
-  width: 40rpx;
-  height: 40rpx;
-  margin-right: 16rpx;
-  display: inline-block;
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-.login-icon.user {
-  background-image: url('data:image/svg+xml;utf8,<svg fill="%23bdbdbd" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg>');
-}
-.login-icon.lock {
-  background-image: url('data:image/svg+xml;utf8,<svg fill="%23bdbdbd" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2zm-8-1a3 3 0 0 1 6 0v1H9V7zm8 11H7v-8h10v8z"/></svg>');
-}
-.login-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 32rpx;
-  color: #333;
-  outline: none;
-  padding: 0;
-}
-.login-btn {
-  width: 100%;
-  height: 88rpx;
-  border-radius: 999rpx;
-  background: #296FB7;
-  color: #fff;
-  font-size: 36rpx;
-  font-weight: bold;
-  border: none;
-  margin-top: 16rpx;
-  box-shadow: 0 4rpx 16rpx 0 rgba(41,111,183,0.25);
-  transition: all 0.3s ease;
+
+  // Logo区域
+  .login-logo-box {
+    margin-top: 190rpx;
+    margin-bottom: $spacing-xl;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .login-logo {
+      width: 180rpx;
+      height: 180rpx;
+      border-radius: $border-radius-lg + 12rpx; // 32rpx
+      background: rgba(255,255,255,0.6);
+      box-shadow: 0 8rpx 32rpx 0 $shadow-dark;
+      backdrop-filter: blur(8rpx);
+    }
+  }
+
+  // 标题
+  .login-title {
+    font-size: $font-size-xxl;
+    font-weight: bold;
+    color: $text-primary;
+    margin-bottom: 48rpx;
+    text-align: center;
+  }
+
+  // 表单容器
+  .login-form {
+    width: 80vw;
+    max-width: 600rpx;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-lg;
+
+    // 输入框容器
+    .login-input-box {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.9);
+      border-radius: $border-radius-xl;
+      padding: 0 $padding-lg;
+      height: $input-height;
+      margin-bottom: $spacing-md;
+      box-shadow: 0 4rpx 16rpx 0 $shadow-light;
+      border: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(10rpx);
+
+      // 图标样式
+      .login-icon {
+        width: 40rpx;
+        height: 40rpx;
+        margin-right: $spacing-sm;
+        display: inline-block;
+        background-size: contain;
+        background-repeat: no-repeat;
+        
+        &.user {
+          background-image: url('data:image/svg+xml;utf8,<svg fill="%23999999" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg>');
+        }
+        
+        &.lock {
+          background-image: url('data:image/svg+xml;utf8,<svg fill="%23999999" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/></svg>');
+        }
+      }
+
+      // 输入框
+      .login-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: $font-size-lg;
+        color: $text-primary;
+        outline: none;
+        padding: 0;
+
+        &::placeholder {
+          color: $text-placeholder;
+        }
+      }
+    }
+
+    // 登录按钮
+    .login-btn {
+      width: 100%;
+      height: $button-height;
+      border-radius: $border-radius-xl;
+      background: linear-gradient(135deg, $primary-color 0%, #4285f4 100%);
+      color: $text-white;
+      font-size: $font-size-lg;
+      font-weight: bold;
+      border: none;
+      margin-top: $spacing-sm;
+      box-shadow: 0 6rpx 20rpx 0 rgba(41,111,183,0.3);
+      transition: all $animation-duration-normal $ease-out;
+      cursor: pointer;
+      
+      &:active {
+        transform: translateY(2rpx);
+        box-shadow: 0 4rpx 12rpx 0 rgba(41,111,183,0.25);
+      }
+
+      &.disabled {
+        background: $text-disabled;
+        color: $text-white;
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+      }
+    }
+
+    // 注册按钮
+    .register-btn {
+      width: 100%;
+      height: $button-height;
+      border-radius: $border-radius-xl;
+      background: transparent;
+      color: $primary-color;
+      font-size: $font-size-lg;
+      font-weight: normal;
+      border: 2rpx solid rgba(41,111,183,0.3);
+      margin-top: $spacing-lg;
+      transition: all $animation-duration-fast $ease-out;
+      cursor: pointer;
+      
+      &:active {
+        border-color: $primary-color;
+        background: rgba(41,111,183,0.05);
+      }
+    }
+  }
+
+  // 协议区域
+  .login-protocol {
+    position: absolute;
+    bottom: $spacing-lg;
+    left: 0;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: $font-size-sm;
+    color: $text-disabled;
+    gap: 4rpx;
+
+    .login-protocol-check {
+      color: $text-disabled;
+      margin-right: $spacing-xs;
+      cursor: pointer;
+      transition: color $animation-duration-normal ease;
+      font-size: $font-size-md;
+      width: 32rpx;
+      height: 32rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &.checked {
+        color: $primary-color;
+      }
+    }
+
+    .login-protocol-link {
+      color: $text-primary;
+      text-decoration: underline;
+      margin: 0 4rpx;
+    }
+  }
 }
 
-.login-btn.disabled {
-  background: #cccccc;
-  color: #999999;
-  box-shadow: none;
-  cursor: not-allowed;
-}
-.register-btn {
-  width: 100%;
-  height: 88rpx;
-  border-radius: 999rpx;
-  background: transparent;
-  color: #4a90e2;
-  font-size: 36rpx;
-  font-weight: bold;
-  border: 2rpx solid transparent;
-  margin-top: 32rpx;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
-  box-sizing: border-box;
-}
-.register-btn:hover, .register-btn:active {
-  border-color: #4a90e2;
-  background: #fff;
-  color: #4a90e2;
-}
-.login-protocol {
-  position: absolute;
-  bottom: 32rpx;
-  left: 0;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24rpx;
-  color: #bdbdbd;
-  gap: 4rpx;
-}
-.login-protocol-check {
-  color: #bdbdbd;
-  margin-right: 8rpx;
-  cursor: pointer;
-  transition: color 0.3s ease;
-  font-size: 28rpx;
-  width: 32rpx;
-  height: 32rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.login-protocol-check.checked {
-  color: #4a90e2;
-}
-.login-protocol-link {
-  color: #222;
-  text-decoration: underline;
-  margin: 0 4rpx;
-}
 </style>

@@ -1,0 +1,5 @@
+{
+  "usingComponents": {
+    "marketing-calendar": "../../components/marketing-calendar/index"
+  }
+}

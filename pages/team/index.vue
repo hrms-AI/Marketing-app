@@ -1,5 +1,18 @@
 <template>
-  <view class="material-page">
+  <view class="app-container">
+    <!-- 状态栏 -->
+    <status-bar />
+    
+    <!-- 顶部导航栏 -->
+    <top-navbar 
+      title="素材" 
+      :show-back="false"
+      :show-logo="false"
+    />
+
+    <!-- 主要内容区 -->
+    <view class="app-content">
+      <view class="material-page">
     <!-- 顶部tab栏 -->
     <view class="material-tabs">
       <view class="tab-item" :class="{'active': activeTab === 'image'}" @click="switchTab('image')">
@@ -61,10 +74,7 @@
     </view>
 
     <!-- 九宫格素材库 -->
-    <view 
-      class="material-content"
-      :style="'height: ' + scrollHeight + 'px;'"
-    >
+    <view class="material-content">
       <view class="material-grid">
         <view 
           v-for="(item, index) in currentMaterialData" 
@@ -101,8 +111,15 @@
       </view>
       <!-- 底部渐变遮罩 -->
       <view class="bottom-mask"></view>
+        </view>
+      </view>
     </view>
 
+    <!-- 底部导航栏 -->
+    <bottom-tabbar 
+      :current-tab="'material'"
+      @tab-change="handleTabChange"
+    />
   </view>
 </template>
 
@@ -112,7 +129,6 @@ export default {
     return {
       activeTab: 'image',
       selectedDate: '',
-      scrollHeight: 0,
       selectedItems: [], // 选中的素材项
       isEditMode: false, // 编辑模式状态
       // 不同类型素材的数据
@@ -125,7 +141,16 @@ export default {
     }
   },
   mounted() {
-    this.calculateScrollHeight();
+    // 检查登录状态
+    const token = this.$utils?.user?.getToken ? this.$utils.user.getToken() : uni.getStorageSync('token');
+    if (!token) {
+      // 未登录，重定向到登录页
+      uni.reLaunch({
+        url: '/pages/login/index'
+      });
+      return;
+    }
+    
     // 初始化一些示例数据
     this.initSampleData();
   },
@@ -520,36 +545,50 @@ export default {
         });
       }
     },
-    calculateScrollHeight() {
-      // 获取系统信息
-      const systemInfo = uni.getSystemInfoSync();
-      const windowHeight = systemInfo.windowHeight;
-      
-      // 计算其他元素占用的高度（单位：px）
-      // tabs: 约70px, add-section: 约200px, material-lib-row: 约70px, padding等: 约100px
-      const otherHeight = 340;
-      
-      // 计算scroll-view的高度
-      this.scrollHeight = windowHeight - otherHeight;
+
+    
+    // 底部导航切换处理(由 bottom-tabbar 组件处理跳转)
+    handleTabChange(tabKey) {
+      // 跳转逻辑已在 bottom-tabbar 组件中处理,这里只需要接收事件
+      console.log('切换到:', tabKey);
     }
   }
 }
 </script>
 
 <style lang="less" scoped>
+/* 应用容器 */
+.app-container {
+  min-height: 100vh;
+  max-height: 100vh;
+  background: linear-gradient(180deg, #f0f8ff 0%, #fff 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 主要内容区 */
+.app-content {
+  flex: 1;
+  overflow: hidden; /* 禁止整体滚动 */
+  padding-top: 215rpx; /* 状态栏60rpx + 导航栏88rpx + 间距67rpx */
+  padding-bottom: 140rpx; /* 底部导航栏120rpx + 间距20rpx */
+  height: calc(100vh - 355rpx);
+}
+
 /* 全局隐藏所有滚动条 */
 ::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* 页面整体 */
 .material-page {
-  background: #fff8f2;
-  height: 100vh;
+  background: linear-gradient(180deg, #f0f8ff 0%, #fff 60%);
+  height: 100%;
   padding: 32rpx;
-  padding-bottom: 100rpx; /* 调整底部间距 */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -572,7 +611,7 @@ export default {
       text-align: center; /* 文字居中 */
 
       &.active {
-        color: #ff7d00;
+        color: #5dade2;
       }
 
       .tab-underline {
@@ -581,7 +620,7 @@ export default {
         bottom: -8rpx;
         width: 60rpx;
         height: 6rpx;
-        background: #ff7d00;
+        background: #5dade2;
         border-radius: 3rpx;
         transform: translateX(-50%); /* 居中对齐 */
       }
@@ -608,7 +647,7 @@ export default {
     .add-upload {
       width: 160rpx;
       height: 160rpx;
-      border: 2rpx dashed #ff7d00;
+      border: 2rpx dashed #5dade2;
       border-radius: 24rpx;
       display: flex;
       flex-direction: column;
@@ -619,12 +658,12 @@ export default {
 
       .upload-icon {
         font-size: 48rpx;
-        color: #ff7d00;
+        color: #5dade2;
       }
 
       .upload-text {
         font-size: 28rpx;
-        color: #ff7d00;
+        color: #5dade2;
       }
     }
   }
@@ -636,19 +675,19 @@ export default {
     gap: 16rpx;
     margin-bottom: 32rpx;
     padding: 32rpx;
-    background: #ffeee6;
+    background: #f0f8ff;
     border-radius: 24rpx;
-    border-left: 6rpx solid #ff7d00;
+    border-left: 6rpx solid #5dade2;
 
     .finished-title {
       font-size: 36rpx;
-      color: #bf6a00;
+      color: #296FB7;
       font-weight: 600;
     }
 
     .finished-desc {
       font-size: 28rpx;
-      color: #bf6a00;
+      color: #666;
       opacity: 0.8;
     }
   }
@@ -677,23 +716,23 @@ export default {
       align-items: center;
       gap: 8rpx;
       background: #fff;
-      border: 2rpx solid #ff7d00;
+      border: 2rpx solid #5dade2;
       border-radius: 16rpx;
       padding: 8rpx 24rpx;
 
       .date-icon {
         font-size: 28rpx;
-        color: #ff7d00;
+        color: #5dade2;
       }
 
       .date-text {
         font-size: 28rpx;
-        color: #bf6a00;
+        color: #333;
       }
     }
 
     .edit-btn {
-      background: #ff7d00;
+      background: #5dade2;
       border-radius: 16rpx;
       padding: 8rpx 24rpx;
 
@@ -710,13 +749,13 @@ export default {
 
       .cancel-btn {
         background: #fff;
-        border: 2rpx solid #ff7d00;
+        border: 2rpx solid #5dade2;
         border-radius: 16rpx;
         padding: 8rpx 24rpx;
 
         .cancel-text {
           font-size: 28rpx;
-          color: #bf6a00;
+          color: #5dade2;
         }
       }
 
@@ -740,10 +779,12 @@ export default {
     overflow-y: auto;
     overflow-x: hidden;
     /* 隐藏滚动条但保持滚动功能 */
-    scrollbar-width: none !important; /* Firefox */
-    -ms-overflow-style: none !important; /* IE 和 Edge */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 和 Edge */
     -webkit-overflow-scrolling: touch; /* iOS 流畅滚动 */
     padding: 0 4rpx; /* 添加左右内边距防止边框被裁切 */
+    /* 确保占用剩余空间 */
+    min-height: 0; /* 允许 flex 子元素收缩 */
     
     /* 九宫格素材库 */
     .material-grid {
@@ -781,7 +822,7 @@ export default {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #ffeee6;
+            background: #f0f8ff;
           }
 
           .file-placeholder {
@@ -791,12 +832,12 @@ export default {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #ffeee6;
+            background: #f0f8ff;
             padding: 16rpx;
 
             .file-name {
               font-size: 20rpx;
-              color: #bf6a00;
+              color: #666;
               text-align: center;
               margin-top: 8rpx;
               overflow: hidden;
@@ -813,7 +854,7 @@ export default {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #ffeee6;
+            background: #f0f8ff;
             padding: 16rpx;
 
             .finished-name {
@@ -831,7 +872,7 @@ export default {
 
           .material-type-icon {
             font-size: 48rpx;
-            color: #ff7d00;
+            color: #5dade2;
             opacity: 0.7;
           }
         }
@@ -877,9 +918,9 @@ export default {
 
         /* 选中状态样式 */
         &.selected {
-          border: 3rpx solid #ff7d00;
+          border: 3rpx solid #5dade2;
           background: #fff;
-          box-shadow: 0 6rpx 20rpx rgba(255, 125, 0, 0.15);
+          box-shadow: 0 6rpx 20rpx rgba(93, 173, 226, 0.15);
           transform: scale(1.01); /* 减小缩放以避免边框被裁切 */
           z-index: 2; /* 确保选中项在上层 */
           
@@ -903,7 +944,7 @@ export default {
           right: 8rpx;
           width: 36rpx;
           height: 36rpx;
-          background: #ff7d00;
+          background: #5dade2;
           border-radius: 8rpx;
           display: flex;
           align-items: center;
@@ -942,24 +983,15 @@ export default {
       left: 0;
       right: 0;
       height: 60rpx;
-      background: linear-gradient(to top, #fff8f2 0%, rgba(255, 248, 242, 0) 100%);
+      background: linear-gradient(to top, #f0f8ff 0%, rgba(240, 248, 255, 0) 100%);
       pointer-events: none;
       z-index: 10;
     }
 
-    /* 彻底隐藏WebKit滚动条 */
+    /* WebKit滚动条隐藏 */
     &::-webkit-scrollbar {
-      display: none !important;
-      width: 0 !important;
-      height: 0 !important;
-    }
-    
-    &::-webkit-scrollbar-track {
-      display: none !important;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      display: none !important;
+      display: none;
+      width: 0;
     }
   }
 }
@@ -1011,31 +1043,15 @@ export default {
 
 <!-- 非scoped样式，用于全局隐藏滚动条 -->
 <style>
-/* 强制隐藏所有滚动条，包括滚动时的临时显示 */
-scroll-view::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  background: transparent !important;
+/* 页面级滚动条隐藏 */
+.material-content::-webkit-scrollbar {
+  display: none;
+  width: 0;
 }
 
-/* 全局隐藏所有滚动条 */
-* {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-*::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-*::-webkit-scrollbar-track {
-  display: none !important;
-}
-
-*::-webkit-scrollbar-thumb {
-  display: none !important;
+/* 兼容性设置 */
+.material-content {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 </style>

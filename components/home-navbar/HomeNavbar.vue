@@ -38,7 +38,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .home-navbar-fixed {
   position: fixed;
   top: 0;

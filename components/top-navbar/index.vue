@@ -1,5 +1,5 @@
 <template>
-  <view class="top-navbar">
+  <view class="top-navbar" :style="{ top: statusBarHeight + 'px' }">
     <view class="nav-left">
       <text v-if="showBack" class="back-btn" @click="handleBack">‹</text>
       <image v-else-if="showLogo" class="nav-logo" src="/static/logo.png" mode="aspectFit" />
@@ -25,6 +25,17 @@ export default {
       default: false
     }
   },
+  data() {
+    return {
+      statusBarHeight: 44 // 默认状态栏高度
+    }
+  },
+  mounted() {
+    // 获取系统信息中的状态栏高度
+    const systemInfo = uni.getSystemInfoSync()
+    this.statusBarHeight = systemInfo.statusBarHeight || 44
+    console.log('导航栏获取状态栏高度:', this.statusBarHeight)
+  },
   methods: {
     handleBack() {
       this.$emit('back');
@@ -36,10 +47,9 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .top-navbar {
   position: fixed;
-  top: 60rpx; /* 状态栏高度 */
   left: 0;
   right: 0;
   z-index: 999;
@@ -48,8 +58,7 @@ export default {
   justify-content: space-between;
   padding: 38rpx 32rpx 0 32rpx;
   height: 88rpx;
-  background: rgba(255, 246, 240, 0.95);
-  backdrop-filter: blur(10rpx);
+  background: #f0f8ff;
 }
 .back-btn {
   font-size: 54rpx;

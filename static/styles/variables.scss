@@ -1,0 +1,105 @@
+// ================================
+// 颜色变量 Colors
+// ================================
+
+// 主题色
+$primary-color: #296FB7;          // 主蓝色
+$primary-light: #5dade2;          // 浅蓝色
+$primary-gradient: linear-gradient(135deg, #296FB7 0%, #4A90E2 100%); // 蓝色主背景渐变
+
+// 状态色
+$success-color: #4caf50;          // 成功绿
+$warning-color: #ff7d00;          // 警告橙
+$error-color: #ff6b6b;            // 错误红
+$info-color: #2196f3;             // 信息蓝
+
+// 文字色
+$text-primary: #222;              // 主文字
+$text-secondary: #666;            // 次要文字
+$text-dark: #333;                 // 深色文字
+$text-placeholder: #999;          // 占位文字
+$text-disabled: #bdbdbd;          // 禁用文字
+$text-white: #fff;                // 白色文字
+
+// 背景色
+$bg-white: #fff;                  // 白色背景
+$bg-light: #f8f8f8;               // 浅灰背景
+$bg-lighter: #f5f5f5;             // 更浅灰背景
+$bg-dark: #333;                   // 深色背景
+
+// 边框色
+$border-light: #e5e5e5;           // 浅边框
+$border-lighter: #f0f0f0;         // 更浅边框
+
+// 阴影色
+$shadow-light: rgba(0,0,0,0.04);  // 浅阴影
+$shadow-normal: rgba(0,0,0,0.06); // 普通阴影
+$shadow-dark: rgba(0,0,0,0.08);   // 深阴影
+
+// ================================
+// 尺寸变量 Dimensions
+// ================================
+
+// 系统栏高度
+$status-bar-height: 60rpx;        // 状态栏高度
+$nav-bar-height: 88rpx;           // 导航栏高度
+$bottom-nav-height: 120rpx;       // 底部导航栏高度
+
+// 间距
+$spacing-xs: 8rpx;                // 极小间距
+$spacing-sm: 16rpx;               // 小间距
+$spacing-md: 24rpx;               // 中间距
+$spacing-lg: 32rpx;               // 大间距
+$spacing-xl: 40rpx;               // 极大间距
+
+// 内边距
+$padding-xs: 8rpx;                // 极小内边距
+$padding-sm: 16rpx;               // 小内边距
+$padding-md: 24rpx;               // 中内边距
+$padding-lg: 32rpx;               // 大内边距
+$padding-xl: 40rpx;               // 极大内边距
+
+// 圆角
+$border-radius-sm: 8rpx;          // 小圆角
+$border-radius-md: 16rpx;         // 中圆角
+$border-radius-lg: 20rpx;         // 大圆角
+$border-radius-xl: 24rpx;         // 极大圆角
+$border-radius-full: 50%;         // 圆形
+
+// 字体大小
+$font-size-xs: 20rpx;             // 极小字体
+$font-size-sm: 24rpx;             // 小字体
+$font-size-md: 28rpx;             // 中字体
+$font-size-lg: 32rpx;             // 大字体
+$font-size-xl: 36rpx;             // 极大字体
+$font-size-xxl: 40rpx;            // 超大字体
+
+// 行高
+$line-height-sm: 1.2;             // 紧密行高
+$line-height-md: 1.5;             // 标准行高
+$line-height-lg: 1.6;             // 松散行高
+
+// 元素高度
+$input-height: 80rpx;             // 输入框高度
+$button-height: 80rpx;            // 按钮高度
+$tab-height: 88rpx;               // 标签页高度
+
+// 层级
+$z-index-dropdown: 10;            // 下拉菜单
+$z-index-modal: 50;               // 模态框
+$z-index-toast: 100;              // 吐司提示
+$z-index-loading: 999;            // 加载层
+
+// ================================
+// 动画变量 Animations
+// ================================
+
+// 动画时长
+$animation-duration-fast: 0.2s;   // 快速动画
+$animation-duration-normal: 0.3s; // 标准动画
+$animation-duration-slow: 0.5s;   // 慢速动画
+
+// 动画曲线
+$ease-in-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+$ease-out: cubic-bezier(0, 0, 0.2, 1);
+$ease-in: cubic-bezier(0.4, 0, 1, 1);

@@ -14,14 +14,15 @@ export default {
     // 获取系统信息中的状态栏高度
     const systemInfo = uni.getSystemInfoSync()
     this.statusBarHeight = systemInfo.statusBarHeight || 44
+    console.log('状态栏高度:', this.statusBarHeight)
   }
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .status-bar {
   width: 100%;
-  background: transparent;
+  background: #f0f8ff;
   position: fixed;
   top: 0;
   left: 0;
