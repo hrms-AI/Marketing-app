@@ -70,17 +70,17 @@
                 </view>
                 <view class="date-full">
                   <text class="date-text">{{ year }}年{{ month }}月{{ dayPlan.day }}日</text>
-                  <text class="task-count">{{ dayPlan.tasks.length }}项任务</text>
+                  <text class="task-count">{{ (dayPlan.tasks && dayPlan.tasks.length) || 0 }}项任务</text>
                 </view>
               </view>
               
               <!-- 当日任务列表 -->
               <view class="day-tasks">
                 <view 
-                  v-for="(task, taskIndex) in dayPlan.tasks"
+                  v-for="(task, taskIndex) in (dayPlan.tasks || [])"
                   :key="taskIndex"
                   class="task-item"
-                  @click="viewTaskDetail(task)"
+                  @click.stop="handleTaskClick(task)"
                 >
                   <view class="task-time">{{ task.time }}</view>
                   <view class="task-content">
@@ -92,7 +92,7 @@
                       </view>
                     </view>
                     <text class="task-desc">{{ task.description }}</text>
-                    <view class="task-channels">
+                    <view class="task-channels" v-if="task.channels && task.channels.length > 0">
                       <text class="channel-label">渠道：</text>
                       <text 
                         v-for="(channel, chIndex) in task.channels"
@@ -104,7 +104,7 @@
                 </view>
                 
                 <!-- 无任务提示 -->
-                <view v-if="dayPlan.tasks.length === 0" class="no-tasks">
+                <view v-if="!dayPlan.tasks || dayPlan.tasks.length === 0" class="no-tasks">
                   <text class="no-tasks-text">今日无营销任务</text>
                 </view>
               </view>
@@ -131,7 +131,7 @@
                 <view class="metric-progress">
                   <view 
                     class="progress-bar" 
-                    :style="`width: ${metric.progress}%`"
+                    :style="{ width: metric.progress + '%' }"
                   ></view>
                 </view>
                 <text class="metric-rate">完成率 {{ metric.progress }}%</text>
@@ -194,8 +194,13 @@ export default {
     
     // 加载营销计划数据 (Mock 数据)
     loadPlanData() {
+        console.log('=== 开始加载营销计划数据 ===');
+        
         // 先生成每日计划
         const dailyPlans = this.generateDailyPlans();
+        
+        console.log('生成的dailyPlans:', dailyPlans);
+        console.log('dailyPlans数量:', dailyPlans.length);
         
         // 计算实际的任务统计
         let totalTasks = 0;
@@ -203,8 +208,9 @@ export default {
         let inProgressTasks = 0;
         let pendingTasks = 0;
         
-        dailyPlans.forEach(day => {
-          if (day.tasks) {
+        dailyPlans.forEach((day, index) => {
+          if (day && day.tasks && Array.isArray(day.tasks)) {
+            console.log(`第${index + 1}天任务数:`, day.tasks.length);
             day.tasks.forEach(task => {
               totalTasks++;
               if (task.status === '已完成') {
@@ -215,8 +221,12 @@ export default {
                 pendingTasks++;
               }
             });
+          } else {
+            console.warn(`第${index + 1}天的数据异常:`, day);
           }
         });
+        
+        console.log('任务统计 - 总数:', totalTasks, '已完成:', completedTasks, '进行中:', inProgressTasks, '待开始:', pendingTasks);
         
         this.planData = {
           totalTasks,
@@ -306,18 +316,25 @@ export default {
     // 生成每日任务
     generateDailyTasks(day, weekday) {
       const tasks = [];
-      const dayNum = parseInt(day);
       
-      // 每日基础任务：客户服务与回复
-      tasks.push({
-        time: '09:00',
-        icon: '💬',
-        title: '客户咨询回复',
-        description: '及时回复各平台客户咨询，维护客户关系，推荐合适套餐',
-        status: dayNum < 19 ? '已完成' : dayNum === 19 ? '进行中' : '待执行',
-        statusClass: dayNum < 19 ? 'completed' : dayNum === 19 ? 'in-progress' : 'pending',
-        channels: ['微信', '电话', '在线客服']
-      });
+      try {
+        const dayNum = parseInt(day);
+        
+        if (isNaN(dayNum)) {
+          console.error('Invalid day number:', day);
+          return tasks;
+        }
+      
+        // 每日基础任务：客户服务与回复
+        tasks.push({
+          time: '09:00',
+          icon: '💬',
+          title: '客户咨询回复',
+          description: '及时回复各平台客户咨询，维护客户关系，推荐合适套餐',
+          status: dayNum < 19 ? '已完成' : dayNum === 19 ? '进行中' : '待执行',
+          statusClass: dayNum < 19 ? 'completed' : dayNum === 19 ? 'in-progress' : 'pending',
+          channels: ['微信', '电话', '在线客服']
+        });
       
       // 每周一：社交媒体内容规划
       if (weekday === '周一') {
@@ -633,6 +650,10 @@ export default {
         });
       }
       
+      } catch (error) {
+        console.error('生成每日任务出错:', error);
+      }
+      
       return tasks;
     },
     
@@ -651,14 +672,35 @@ export default {
       }
     },
     
+    // 处理任务点击
+    handleTaskClick(task) {
+      console.log('任务被点击:', task);
+      this.viewTaskDetail(task);
+    },
+    
     // 查看任务详情
     viewTaskDetail(task) {
-      uni.showModal({
-        title: task.title,
-        content: `时间：${task.time}\n描述：${task.description}\n渠道：${task.channels.join('、')}\n状态：${task.status}`,
-        showCancel: false,
-        confirmText: '知道了'
-      });
+      if (!task) {
+        console.warn('任务对象为空');
+        return;
+      }
+      
+      try {
+        const channels = (task.channels && task.channels.length > 0) ? task.channels.join('、') : '无';
+        
+        uni.showModal({
+          title: task.title || '任务详情',
+          content: `时间：${task.time || '未设置'}\n描述：${task.description || '无描述'}\n渠道：${channels}\n状态：${task.status || '未知'}`,
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      } catch (error) {
+        console.error('显示任务详情出错:', error);
+        uni.showToast({
+          title: '查看详情失败',
+          icon: 'none'
+        });
+      }
     }
   }
 }

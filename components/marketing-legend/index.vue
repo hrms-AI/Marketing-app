@@ -44,6 +44,7 @@ export default {
   border-radius: 16rpx;
   padding: 32rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  margin-bottom: 20rpx;
 }
 
 .legend-title {

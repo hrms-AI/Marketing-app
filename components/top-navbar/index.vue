@@ -55,10 +55,11 @@ export default {
   z-index: 999;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 38rpx 32rpx 0 32rpx;
+  justify-content: center;
+  padding: 0 32rpx 0 32rpx;
   height: 88rpx;
   background: #f0f8ff;
+  position: relative;
 }
 .back-btn {
   font-size: 54rpx;
@@ -68,6 +69,10 @@ export default {
   text-align: left;
 }
 .nav-left {
+  position: absolute;
+  left: 32rpx;
+  top: 50%;
+  transform: translateY(-50%);
   width: 60rpx;
   display: flex;
   justify-content: flex-start;
@@ -82,7 +87,6 @@ export default {
   font-size: 36rpx;
   font-weight: 600;
   color: #000;
-  flex: 1;
   text-align: center;
 }
 .nav-actions {

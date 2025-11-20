@@ -1,17 +1,20 @@
 <template>
-  <view class="app-container">
-    <!-- 状态栏 -->
-    <status-bar />
-    
-    <!-- 顶部导航栏 -->
-    <top-navbar 
-      title="报告" 
-      :show-back="false"
-      :show-logo="false"
-    />
+  <view class="page-container">
+    <!-- 固定头部 -->
+    <view class="header-fixed">
+      <!-- 状态栏 -->
+      <status-bar />
+      
+      <!-- 顶部导航栏 -->
+      <top-navbar 
+        title="报告" 
+        :show-back="false"
+        :show-logo="false"
+      />
+    </view>
 
-    <!-- 主要内容区 -->
-    <view class="app-content">
+    <!-- 可滚动内容区 -->
+    <scroll-view class="main-content" scroll-y="true">
       <view class="report-bg">
     <view class="report-content">
       <!-- 数据统计卡片区域 -->
@@ -94,13 +97,15 @@
 
         </view>
       </view>
-    </view>
+    </scroll-view>
 
-    <!-- 底部导航栏 -->
-    <bottom-tabbar 
-      :current-tab="'report'"
-      @tab-change="handleTabChange"
-    />
+    <!-- 固定底部 -->
+    <view class="footer-fixed">
+      <bottom-tabbar 
+        :current-tab="'report'"
+        @tab-change="handleTabChange"
+      />
+    </view>
   </view>
 </template>
 
@@ -182,25 +187,42 @@ export default {
 </script>
 
 <style scoped>
-/* 应用容器 */
-.app-container {
-  min-height: 100vh;
-  max-height: 100vh;
-  background: linear-gradient(180deg, #f0f8ff 0%, #fff 100%);
-  position: relative;
+/* 页面容器 */
+.page-container {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  height: 100vh;
+  background-color: #f4f7fa;
 }
 
-/* 主要内容区 */
-.app-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-top: 215rpx; /* 状态栏60rpx + 导航栏88rpx + 间距67rpx */
-  padding-bottom: 140rpx; /* 底部导航栏120rpx + 间距20rpx */
-  height: calc(100vh - 355rpx);
+/* 固定头部 */
+.header-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background-color: #f4f7fa;
+}
+
+/* 可滚动内容区 */
+.main-content {
+  position: fixed;
+  top: 200rpx;
+  bottom: 120rpx;
+  left: 0;
+  right: 0;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+}
+
+/* 固定底部 */
+.footer-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
 }
 
 .report-bg {

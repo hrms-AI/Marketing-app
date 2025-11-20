@@ -1,18 +1,20 @@
-
 <template>
-  <view class="app-container">
-    <!-- 状态栏 -->
-    <status-bar />
-    
-    <!-- 顶部导航栏 -->
-    <top-navbar 
-      title="营销计划" 
-      :show-back="false"
-      :show-logo="true"
-    />
+  <view class="page-container">
+    <!-- 固定头部 -->
+    <view class="header-fixed">
+      <!-- 状态栏 -->
+      <status-bar />
+      
+      <!-- 顶部导航栏 -->
+      <top-navbar 
+        title="营销计划" 
+        :show-back="false"
+        :show-logo="true"
+      />
+    </view>
 
-    <!-- 主要内容区 -->
-    <view class="app-content">
+    <!-- 可滚动内容区 -->
+    <scroll-view class="main-content" scroll-y="true">
       <!-- 酒店选择区域 -->
       <hotel-selector
         :hotel-names="hotelNames"
@@ -52,6 +54,14 @@
 
       <!-- 图例说明 -->
       <marketing-legend />
+    </scroll-view>
+
+    <!-- 固定底部 -->
+    <view class="footer-fixed">
+      <bottom-tabbar 
+        :current-tab="'strategy'"
+        @tab-change="handleTabChange"
+      />
     </view>
 
     <!-- 任务详情弹窗 -->
@@ -104,12 +114,6 @@
       @view-channels="viewChannels"
       @view-content="viewContent"
       @view-feedback="viewFeedback"
-    />
-
-    <!-- 底部导航栏 -->
-    <bottom-tabbar 
-      :current-tab="'strategy'"
-      @tab-change="handleTabChange"
     />
   </view>
 </template>
@@ -193,29 +197,47 @@ $shadow-heavy: 0 8rpx 32rpx 0 rgba(0,0,0,0.08);
 $border-radius: 16rpx;
 $border-radius-large: 24rpx;
 
-/* 应用容器 */
-.app-container {
-  min-height: 100vh;
-  max-height: 100vh;
-  background: linear-gradient(180deg, #f0f8ff 0%, #fff 100%);
-  position: relative;
+/* 页面容器 */
+.page-container {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  height: 100vh;
+  background-color: #f4f7fa;
 }
 
-/* 主要内容区 */
-.app-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 215rpx 32rpx 120rpx; /* 状态栏+导航栏 内容间距 底部导航 */
-  height: calc(100vh - 335rpx);
-  
-  .section-content {
-    width: 100%;
-    animation: fadeIn 0.3s ease-in-out;
-  }
+/* 固定头部 */
+.header-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background-color: #f4f7fa;
+}
+
+/* 可滚动内容区 */
+.main-content {
+  position: fixed;
+  top: 200rpx;
+  bottom: 150rpx;
+  left: 0;
+  right: 0;
+  padding:14rpx;
+  box-sizing: border-box;
+}
+
+/* 固定底部 */
+.footer-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+}
+
+.section-content {
+  width: 100%;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 .price-content {
