@@ -59,7 +59,6 @@ export default {
   padding: 0 32rpx 0 32rpx;
   height: 88rpx;
   background: #f0f8ff;
-  position: relative;
 }
 .back-btn {
   font-size: 54rpx;

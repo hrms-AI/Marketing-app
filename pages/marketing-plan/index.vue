@@ -30,19 +30,35 @@
         <view class="plan-overview">
           <view class="overview-title">计划概览</view>
           <view class="overview-stats">
-            <view class="stat-item">
+            <view 
+              class="stat-item"
+              :class="{ active: currentFilter === 'all' }"
+              @click="filterTasks('all')"
+            >
               <text class="stat-number">{{ planData.totalTasks }}</text>
               <text class="stat-label">总任务数</text>
             </view>
-            <view class="stat-item">
+            <view 
+              class="stat-item"
+              :class="{ active: currentFilter === 'completed' }"
+              @click="filterTasks('completed')"
+            >
               <text class="stat-number">{{ planData.completedTasks }}</text>
               <text class="stat-label">已完成</text>
             </view>
-            <view class="stat-item">
+            <view 
+              class="stat-item"
+              :class="{ active: currentFilter === 'in-progress' }"
+              @click="filterTasks('in-progress')"
+            >
               <text class="stat-number">{{ planData.inProgressTasks }}</text>
-              <text class="stat-label">进行中</text>
+              <text class="stat-label">待审核</text>
             </view>
-            <view class="stat-item">
+            <view 
+              class="stat-item"
+              :class="{ active: currentFilter === 'pending' }"
+              @click="filterTasks('pending')"
+            >
               <text class="stat-number">{{ planData.pendingTasks }}</text>
               <text class="stat-label">待开始</text>
             </view>
@@ -52,13 +68,41 @@
         <!-- 每日营销计划 -->
         <view class="daily-plans-section">
           <view class="section-title">
-            <text class="title-text">{{ year }}年{{ month }}月营销计划</text>
-            <text class="title-count">({{ getTotalDailyTasks() }}项任务)</text>
+            <view class="title-left">
+              <text class="title-text">{{ year }}年{{ month }}月营销计划</text>
+              <text class="title-count">({{ getFilteredTasksCount() }}项任务)</text>
+              <text v-if="currentFilter !== 'all'" class="filter-indicator">
+                - {{ getFilterText() }}
+              </text>
+            </view>
+            
+            <!-- 待审核模式下的批量操作 -->
+            <view v-if="currentFilter === 'in-progress'" class="review-controls">
+              <view 
+                class="batch-review-btn" 
+                :class="{ active: batchReviewMode }"
+                @click="toggleBatchReviewMode"
+              >
+                <text class="btn-text">{{ batchReviewMode ? '取消' : '批量审核' }}</text>
+              </view>
+              
+              <view 
+                v-if="batchReviewMode && selectedTasksForReview.length > 0" 
+                class="batch-actions"
+              >
+                <view class="batch-action-btn approve" @click="batchApprove">
+                  <text class="action-text">批量通过({{ selectedTasksForReview.length }})</text>
+                </view>
+                <view class="batch-action-btn reject" @click="batchReject">
+                  <text class="action-text">批量拒绝</text>
+                </view>
+              </view>
+            </view>
           </view>
           
           <view class="daily-plans-list">
             <view 
-              v-for="(dayPlan, index) in (planData.dailyPlans || [])" 
+              v-for="(dayPlan, index) in filteredDailyPlans" 
               :key="index"
               class="daily-plan-item"
             >
@@ -80,8 +124,26 @@
                   v-for="(task, taskIndex) in (dayPlan.tasks || [])"
                   :key="taskIndex"
                   class="task-item"
+                  :class="{ 
+                    'review-mode': batchReviewMode && task.status === '进行中',
+                    'selected': isTaskSelected(task)
+                  }"
                   @click.stop="handleTaskClick(task)"
                 >
+                  <!-- 批量选择checkbox -->
+                  <view 
+                    v-if="batchReviewMode && task.status === '进行中'" 
+                    class="task-checkbox"
+                    @click.stop="toggleTaskSelection(task)"
+                  >
+                    <view 
+                      class="checkbox" 
+                      :class="{ checked: isTaskSelected(task) }"
+                    >
+                      <text v-if="isTaskSelected(task)" class="check-icon">✓</text>
+                    </view>
+                  </view>
+                  
                   <view class="task-time">{{ task.time }}</view>
                   <view class="task-content">
                     <view class="task-header">
@@ -99,6 +161,19 @@
                         :key="chIndex"
                         class="channel-tag"
                       >{{ channel }}</text>
+                    </view>
+                    
+                    <!-- 单个审核按钮 -->
+                    <view 
+                      v-if="task.status === '进行中' && !batchReviewMode" 
+                      class="single-review-actions"
+                    >
+                      <view class="review-btn approve" @click.stop="approveTask(task)">
+                        <text class="btn-text">✓ 通过</text>
+                      </view>
+                      <view class="review-btn reject" @click.stop="rejectTask(task)">
+                        <text class="btn-text">✗ 拒绝</text>
+                      </view>
                     </view>
                   </view>
                 </view>
@@ -157,6 +232,9 @@ export default {
       year: '2025',
       month: '11',
       loading: false,
+      currentFilter: 'all', // 当前过滤状态: all, completed, in-progress, pending
+      batchReviewMode: false, // 批量审核模式
+      selectedTasksForReview: [], // 选中待审核的任务
       planData: {
         totalTasks: 0,
         completedTasks: 0,
@@ -165,6 +243,39 @@ export default {
         dailyPlans: [],
         metrics: []
       }
+    }
+  },
+  
+  computed: {
+    // 根据当前过滤条件显示对应的每日计划
+    filteredDailyPlans() {
+      if (!this.planData.dailyPlans || this.currentFilter === 'all') {
+        return this.planData.dailyPlans || [];
+      }
+      
+      return this.planData.dailyPlans.map(dayPlan => {
+        if (!dayPlan.tasks) {
+          return { ...dayPlan, tasks: [] };
+        }
+        
+        const filteredTasks = dayPlan.tasks.filter(task => {
+          switch (this.currentFilter) {
+            case 'completed':
+              return task.status === '已完成';
+            case 'in-progress':
+              return task.status === '进行中';
+            case 'pending':
+              return task.status === '待执行';
+            default:
+              return true;
+          }
+        });
+        
+        return {
+          ...dayPlan,
+          tasks: filteredTasks
+        };
+      }).filter(dayPlan => dayPlan.tasks.length > 0); // 只显示有任务的日期
     }
   },
   
@@ -190,6 +301,253 @@ export default {
   methods: {
     handleBack() {
       uni.navigateBack();
+    },
+    
+    // 过滤任务
+    filterTasks(filterType) {
+      this.currentFilter = filterType;
+      
+      // 切换过滤条件时退出批量审核模式
+      if (this.batchReviewMode) {
+        this.batchReviewMode = false;
+        this.selectedTasksForReview = [];
+      }
+      
+      // 显示过滤提示
+      let filterText = '';
+      switch (filterType) {
+        case 'all':
+          filterText = '显示全部任务';
+          break;
+        case 'completed':
+          filterText = '显示已完成任务';
+          break;
+        case 'in-progress':
+          filterText = '显示进行中任务';
+          break;
+        case 'pending':
+          filterText = '显示待开始任务';
+          break;
+      }
+      
+      uni.showToast({
+        title: filterText,
+        icon: 'none',
+        duration: 1500
+      });
+    },
+    
+    // 切换批量审核模式
+    toggleBatchReviewMode() {
+      this.batchReviewMode = !this.batchReviewMode;
+      
+      // 退出批量模式时清空选择
+      if (!this.batchReviewMode) {
+        this.selectedTasksForReview = [];
+      }
+      
+      uni.showToast({
+        title: this.batchReviewMode ? '进入批量审核模式' : '退出批量审核模式',
+        icon: 'none',
+        duration: 1000
+      });
+    },
+    
+    // 切换任务选择状态
+    toggleTaskSelection(task) {
+      if (!task || !task.id) {
+        // 为任务生成ID
+        task.id = `${task.time}_${task.title}`;
+      }
+      
+      const index = this.selectedTasksForReview.findIndex(t => t.id === task.id);
+      if (index > -1) {
+        this.selectedTasksForReview.splice(index, 1);
+      } else {
+        this.selectedTasksForReview.push(task);
+      }
+    },
+    
+    // 检查任务是否被选中
+    isTaskSelected(task) {
+      if (!task || !task.id) {
+        task.id = `${task.time}_${task.title}`;
+      }
+      return this.selectedTasksForReview.some(t => t.id === task.id);
+    },
+    
+    // 单个任务审核通过
+    approveTask(task) {
+      uni.showModal({
+        title: '审核确认',
+        content: `确认通过任务"${task.title}"吗？`,
+        success: (res) => {
+          if (res.confirm) {
+            this.updateTaskStatus(task, '已完成', '审核通过');
+            uni.showToast({
+              title: '审核通过',
+              icon: 'success',
+              duration: 1500
+            });
+          }
+        }
+      });
+    },
+    
+    // 单个任务审核拒绝
+    rejectTask(task) {
+      uni.showModal({
+        title: '审核确认',
+        content: `确认拒绝任务"${task.title}"吗？`,
+        success: (res) => {
+          if (res.confirm) {
+            this.updateTaskStatus(task, '待执行', '审核拒绝，需重新执行');
+            uni.showToast({
+              title: '已拒绝',
+              icon: 'none',
+              duration: 1500
+            });
+          }
+        }
+      });
+    },
+    
+    // 批量审核通过
+    batchApprove() {
+      if (this.selectedTasksForReview.length === 0) {
+        uni.showToast({
+          title: '请先选择任务',
+          icon: 'none'
+        });
+        return;
+      }
+      
+      uni.showModal({
+        title: '批量审核',
+        content: `确认通过选中的 ${this.selectedTasksForReview.length} 个任务吗？`,
+        success: (res) => {
+          if (res.confirm) {
+            this.selectedTasksForReview.forEach(task => {
+              this.updateTaskStatus(task, '已完成', '批量审核通过');
+            });
+            
+            uni.showToast({
+              title: `已通过 ${this.selectedTasksForReview.length} 个任务`,
+              icon: 'success',
+              duration: 2000
+            });
+            
+            this.selectedTasksForReview = [];
+            this.batchReviewMode = false;
+            this.reloadStatistics();
+          }
+        }
+      });
+    },
+    
+    // 批量审核拒绝
+    batchReject() {
+      if (this.selectedTasksForReview.length === 0) {
+        uni.showToast({
+          title: '请先选择任务',
+          icon: 'none'
+        });
+        return;
+      }
+      
+      uni.showModal({
+        title: '批量审核',
+        content: `确认拒绝选中的 ${this.selectedTasksForReview.length} 个任务吗？`,
+        success: (res) => {
+          if (res.confirm) {
+            this.selectedTasksForReview.forEach(task => {
+              this.updateTaskStatus(task, '待执行', '批量审核拒绝，需重新执行');
+            });
+            
+            uni.showToast({
+              title: `已拒绝 ${this.selectedTasksForReview.length} 个任务`,
+              icon: 'none',
+              duration: 2000
+            });
+            
+            this.selectedTasksForReview = [];
+            this.batchReviewMode = false;
+            this.reloadStatistics();
+          }
+        }
+      });
+    },
+    
+    // 更新任务状态
+    updateTaskStatus(task, newStatus, reason) {
+      try {
+        // 找到对应的任务并更新状态
+        this.planData.dailyPlans.forEach(day => {
+          if (day.tasks) {
+            const taskIndex = day.tasks.findIndex(t => 
+              t.time === task.time && t.title === task.title
+            );
+            if (taskIndex > -1) {
+              day.tasks[taskIndex].status = newStatus;
+              day.tasks[taskIndex].statusClass = this.getStatusClass(newStatus);
+              day.tasks[taskIndex].reviewTime = new Date().toLocaleString();
+              day.tasks[taskIndex].reviewReason = reason;
+            }
+          }
+        });
+        
+        // 重新计算统计数据
+        this.reloadStatistics();
+        
+      } catch (error) {
+        console.error('更新任务状态失败:', error);
+        uni.showToast({
+          title: '更新失败',
+          icon: 'error'
+        });
+      }
+    },
+    
+    // 获取状态样式类名
+    getStatusClass(status) {
+      switch (status) {
+        case '已完成':
+          return 'completed';
+        case '进行中':
+          return 'in-progress';
+        case '待执行':
+          return 'pending';
+        default:
+          return 'pending';
+      }
+    },
+    
+    // 重新加载统计数据
+    reloadStatistics() {
+      let totalTasks = 0;
+      let completedTasks = 0;
+      let inProgressTasks = 0;
+      let pendingTasks = 0;
+      
+      this.planData.dailyPlans.forEach(day => {
+        if (day && day.tasks && Array.isArray(day.tasks)) {
+          day.tasks.forEach(task => {
+            totalTasks++;
+            if (task.status === '已完成') {
+              completedTasks++;
+            } else if (task.status === '进行中') {
+              inProgressTasks++;
+            } else {
+              pendingTasks++;
+            }
+          });
+        }
+      });
+      
+      this.planData.totalTasks = totalTasks;
+      this.planData.completedTasks = completedTasks;
+      this.planData.inProgressTasks = inProgressTasks;
+      this.planData.pendingTasks = pendingTasks;
     },
     
     // 加载营销计划数据 (Mock 数据)
@@ -672,6 +1030,35 @@ export default {
       }
     },
     
+    // 获取过滤后的任务数量
+    getFilteredTasksCount() {
+      try {
+        if (!this.filteredDailyPlans || !Array.isArray(this.filteredDailyPlans)) {
+          return 0;
+        }
+        return this.filteredDailyPlans.reduce((total, day) => {
+          return total + (day && day.tasks && Array.isArray(day.tasks) ? day.tasks.length : 0);
+        }, 0);
+      } catch (error) {
+        console.error('getFilteredTasksCount error:', error);
+        return 0;
+      }
+    },
+    
+    // 获取过滤状态文本
+    getFilterText() {
+      switch (this.currentFilter) {
+        case 'completed':
+          return '已完成';
+        case 'in-progress':
+          return '进行中';
+        case 'pending':
+          return '待开始';
+        default:
+          return '全部';
+      }
+    },
+    
     // 处理任务点击
     handleTaskClick(task) {
       console.log('任务被点击:', task);
@@ -714,12 +1101,19 @@ export default {
 
 .app-content {
   padding-top: 215rpx; /* 状态栏60rpx + 导航栏88rpx + 间距67rpx */
-  padding-bottom: 40rpx;
+  /* 安全区域适配 - 兼容不同浏览器 */
+  padding-bottom: 120rpx;
+  padding-bottom: calc(120rpx + constant(safe-area-inset-bottom)); /* iOS 11.0-11.2 */
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom)); /* iOS 11.2+ */
   min-height: calc(100vh - 215rpx);
 }
 
 .plan-page {
   padding: 32rpx;
+  /* 安全区域适配 - 兼容不同浏览器 */
+  padding-bottom: 60rpx;
+  padding-bottom: calc(60rpx + constant(safe-area-inset-bottom)); /* iOS 11.0-11.2 */
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom)); /* iOS 11.2+ */
 }
 
 /* 酒店信息卡片 */
@@ -787,6 +1181,10 @@ export default {
     
     .stat-item {
       text-align: center;
+      padding: 16rpx 8rpx;
+      border-radius: 12rpx;
+      transition: all 0.3s ease;
+      cursor: pointer;
       
       .stat-number {
         display: block;
@@ -794,11 +1192,34 @@ export default {
         font-weight: 700;
         color: #296FB7;
         margin-bottom: 8rpx;
+        transition: color 0.3s ease;
       }
       
       .stat-label {
         font-size: 24rpx;
         color: #666;
+        transition: color 0.3s ease;
+      }
+      
+      /* 激活状态 */
+      &.active {
+        background: linear-gradient(135deg, #296FB7 0%, #1e5a96 100%);
+        transform: translateY(-2rpx);
+        box-shadow: 0 8rpx 20rpx rgba(41, 111, 183, 0.3);
+        
+        .stat-number {
+          color: #fff;
+        }
+        
+        .stat-label {
+          color: rgba(255, 255, 255, 0.9);
+        }
+      }
+      
+      /* 悬停效果 */
+      &:hover {
+        transform: translateY(-2rpx);
+        box-shadow: 0 4rpx 12rpx rgba(41, 111, 183, 0.15);
       }
     }
   }
@@ -810,19 +1231,97 @@ export default {
   
   .section-title {
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 24rpx;
     
-    .title-text {
-      font-size: 32rpx;
-      font-weight: 600;
-      color: #333;
+    .title-left {
+      display: flex;
+      align-items: baseline;
+      
+      .title-text {
+        font-size: 32rpx;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .title-count {
+        font-size: 24rpx;
+        color: #666;
+        margin-left: 8rpx;
+      }
+      
+      .filter-indicator {
+        font-size: 24rpx;
+        color: #296FB7;
+        margin-left: 8rpx;
+        font-weight: 500;
+      }
     }
     
-    .title-count {
-      font-size: 24rpx;
-      color: #666;
-      margin-left: 8rpx;
+    /* 审核控制区域 */
+    .review-controls {
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+      
+      .batch-review-btn {
+        background: linear-gradient(135deg, #296FB7 0%, #1e5a96 100%);
+        color: #fff;
+        font-size: 26rpx;
+        padding: 12rpx 24rpx;
+        border-radius: 24rpx;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        
+        &.active {
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        
+        &:hover {
+          transform: translateY(-1rpx);
+          box-shadow: 0 4rpx 12rpx rgba(41, 111, 183, 0.3);
+        }
+        
+        .btn-text {
+          font-weight: 500;
+        }
+      }
+      
+      .batch-actions {
+        display: flex;
+        gap: 12rpx;
+        
+        .batch-action-btn {
+          font-size: 24rpx;
+          padding: 10rpx 20rpx;
+          border-radius: 20rpx;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          
+          &.approve {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #fff;
+            
+            &:hover {
+              box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.3);
+            }
+          }
+          
+          &.reject {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: #fff;
+            
+            &:hover {
+              box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.3);
+            }
+          }
+          
+          .action-text {
+            font-weight: 500;
+          }
+        }
+      }
     }
   }
   
@@ -899,6 +1398,55 @@ export default {
             transform: scale(0.98);
           }
           
+          /* 批量审核模式样式 */
+          &.review-mode {
+            background: #f8f9fa;
+            border-left: 4rpx solid #296FB7;
+            padding-left: 20rpx;
+          }
+          
+          /* 选中状态样式 */
+          &.selected {
+            background: #e3f2fd;
+            border-left: 4rpx solid #2563eb;
+          }
+          
+          /* 任务选择框 */
+          .task-checkbox {
+            display: flex;
+            align-items: center;
+            margin-right: 16rpx;
+            margin-top: 8rpx;
+            
+            .checkbox {
+              width: 40rpx;
+              height: 40rpx;
+              border: 2rpx solid #d1d5db;
+              border-radius: 8rpx;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: #fff;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              
+              &.checked {
+                background: #296FB7;
+                border-color: #296FB7;
+                
+                .check-icon {
+                  color: #fff;
+                  font-size: 24rpx;
+                  font-weight: bold;
+                }
+              }
+              
+              &:hover {
+                border-color: #296FB7;
+              }
+            }
+          }
+          
           .task-time {
             font-size: 24rpx;
             color: #296FB7;
@@ -967,6 +1515,7 @@ export default {
               align-items: center;
               flex-wrap: wrap;
               gap: 8rpx;
+              margin-bottom: 12rpx;
               
               .channel-label {
                 font-size: 20rpx;
@@ -980,6 +1529,55 @@ export default {
                 padding: 2rpx 8rpx;
                 border-radius: 6rpx;
                 border: 1rpx solid #e3f2fd;
+              }
+            }
+            
+            /* 单个审核按钮 */
+            .single-review-actions {
+              display: flex;
+              gap: 12rpx;
+              margin-top: 16rpx;
+              
+              .review-btn {
+                font-size: 22rpx;
+                padding: 8rpx 16rpx;
+                border-radius: 16rpx;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                min-width: 80rpx;
+                text-align: center;
+                
+                &.approve {
+                  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                  color: #fff;
+                  
+                  &:hover {
+                    transform: translateY(-1rpx);
+                    box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.3);
+                  }
+                  
+                  &:active {
+                    transform: translateY(0);
+                  }
+                }
+                
+                &.reject {
+                  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                  color: #fff;
+                  
+                  &:hover {
+                    transform: translateY(-1rpx);
+                    box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.3);
+                  }
+                  
+                  &:active {
+                    transform: translateY(0);
+                  }
+                }
+                
+                .btn-text {
+                  font-weight: 500;
+                }
               }
             }
           }

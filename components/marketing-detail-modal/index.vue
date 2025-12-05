@@ -48,37 +48,76 @@
           </view>
         </view>
         
-        <!-- 营销管理网格区域 -->
+        <!-- 今日营销概览 -->
         <view class="action-section">
-          <text class="action-title">营销管理</text>
+          <text class="action-title">今日营销概览</text>
           
-          <!-- 网格布局 -->
-          <view class="management-grid">
-            <view 
-              v-for="(card, index) in managementCards" 
-              :key="index"
-              class="management-card"
-              :class="`${card.type}-card`"
-              @click="card.handler"
-            >
-              <view class="card-gradient">
-                <view class="card-icon-large">{{ card.icon }}</view>
-                <view class="card-badge">{{ card.badge }}</view>
-              </view>
-              <view class="card-body">
-                <text class="card-title">{{ card.title }}</text>
-                <text class="card-subtitle">{{ card.subtitle }}</text>
-                <view class="card-stats">
-                  <view class="stat-item">
-                    <text class="stat-label">{{ card.stat1.label }}</text>
-                    <text class="stat-value">{{ card.stat1.value }}</text>
-                  </view>
-                  <view class="stat-divider"></view>
-                  <view class="stat-item">
-                    <text class="stat-label">{{ card.stat2.label }}</text>
-                    <text class="stat-value">{{ card.stat2.value }}</text>
-                  </view>
+          <!-- 营销内容 -->
+          <view class="marketing-section">
+            <view class="section-header">
+              <text class="section-icon">📝</text>
+              <text class="section-title">营销内容</text>
+              <text class="section-count">{{ todayContent.length }}条</text>
+            </view>
+            <view class="content-list">
+              <view 
+                v-for="(content, index) in todayContent" 
+                :key="index"
+                class="content-item"
+              >
+                <view class="content-icon">{{ content.icon }}</view>
+                <view class="content-info">
+                  <text class="content-title">{{ content.title }}</text>
+                  <text class="content-desc">{{ content.desc }}</text>
                 </view>
+                <view class="content-status" :class="content.statusClass">
+                  <text class="status-text">{{ content.status }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 营销渠道 -->
+          <view class="marketing-section">
+            <view class="section-header">
+              <text class="section-icon">📱</text>
+              <text class="section-title">营销渠道</text>
+              <text class="section-count">{{ activeChannels.length }}个活跃</text>
+            </view>
+            <view class="channel-list">
+              <view 
+                v-for="(channel, index) in activeChannels" 
+                :key="index"
+                class="channel-item"
+              >
+                <view class="channel-icon">{{ channel.icon }}</view>
+                <view class="channel-info">
+                  <text class="channel-name">{{ channel.name }}</text>
+                  <text class="channel-stats">{{ channel.stats }}</text>
+                </view>
+                <view class="channel-indicator" :class="channel.status">
+                  <text class="indicator-dot"></text>
+                </view>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 营销任务状态 -->
+          <view class="marketing-section">
+            <view class="section-header">
+              <text class="section-icon">📋</text>
+              <text class="section-title">营销任务状态</text>
+              <text class="section-count">{{ todayTasks.total }}项任务</text>
+            </view>
+            <view class="task-status-overview">
+              <view 
+                v-for="(taskStatus, index) in taskStatusList" 
+                :key="index"
+                class="task-status-item"
+                :class="taskStatus.type"
+              >
+                <text class="task-status-count">{{ taskStatus.count }}</text>
+                <text class="task-status-label">{{ taskStatus.label }}</text>
               </view>
             </view>
           </view>
@@ -152,72 +191,90 @@ export default {
       ];
     },
     
-    // 营销管理卡片配置
-    managementCards() {
+    // 今日营销内容
+    todayContent() {
       return [
         {
-          type: 'channels',
           icon: '📱',
-          badge: '6个渠道',
-          title: '推送渠道',
-          subtitle: 'Channel Management',
-          stat1: {
-            label: '覆盖率',
-            value: this.detail.channelCoverage || '85%'
-          },
-          stat2: {
-            label: '活跃度',
-            value: this.detail.channelActive || '92%'
-          },
-          handler: this.handleViewChannels
+          title: '抖音短视频发布',
+          desc: '酒店特色房型展示视频',
+          status: '已发布',
+          statusClass: 'published'
         },
         {
-          type: 'content',
-          icon: '📝',
-          badge: '12条内容',
-          title: '营销内容',
-          subtitle: 'Content Library',
-          stat1: {
-            label: '点击率',
-            value: this.detail.contentClick || '78%'
-          },
-          stat2: {
-            label: '转化率',
-            value: this.detail.contentConversion || '45%'
-          },
-          handler: this.handleViewContent
+          icon: '📖',
+          title: '小红书图文推广',
+          desc: '周末特惠活动宣传',
+          status: '进行中',
+          statusClass: 'active'
         },
         {
-          type: 'feedback',
           icon: '💬',
-          badge: '28条反馈',
-          title: '客户反馈',
-          subtitle: 'User Feedback',
-          stat1: {
-            label: '满意度',
-            value: `${this.detail.satisfaction || '4.5'}★`
-          },
-          stat2: {
-            label: '回复率',
-            value: this.detail.replyRate || '96%'
-          },
-          handler: this.handleViewFeedback
+          title: '微信朋友圈营销',
+          desc: '客户好评分享转发',
+          status: '待发布',
+          statusClass: 'pending'
+        }
+      ];
+    },
+    
+    // 活跃营销渠道
+    activeChannels() {
+      return [
+        {
+          icon: '📱',
+          name: '抖音',
+          stats: '今日曝光 2.3K',
+          status: 'active'
         },
         {
-          type: 'analytics',
-          icon: '📊',
-          badge: '实时',
-          title: '数据分析',
-          subtitle: 'Data Analytics',
-          stat1: {
-            label: '访问量',
-            value: this.detail.visits || '1.2K'
-          },
-          stat2: {
-            label: '增长率',
-            value: this.detail.growth || '+15%'
-          },
-          handler: this.handleViewAnalytics
+          icon: '📖',
+          name: '小红书',
+          stats: '今日点赞 156',
+          status: 'active'
+        },
+        {
+          icon: '💬',
+          name: '微信',
+          stats: '今日咨询 28人',
+          status: 'active'
+        },
+        {
+          icon: '�',
+          name: '快手',
+          stats: '暂无数据',
+          status: 'inactive'
+        }
+      ];
+    },
+    
+    // 今日任务统计
+    todayTasks() {
+      return {
+        total: 8,
+        completed: 3,
+        active: 2,
+        pending: 3
+      };
+    },
+    
+    // 任务状态列表
+    taskStatusList() {
+      return [
+        {
+          type: 'completed',
+          count: this.todayTasks.completed,
+          label: '已完成'
+        },
+        {
+          type: 'active',
+          count: this.todayTasks.active,
+          label: '进行中'
+        },
+        {
+          type: 'pending',
+          count: this.todayTasks.pending,
+          label: '待开始'
         }
       ];
     }
@@ -368,13 +425,20 @@ export default {
   width: 100%;
   padding: 0 32rpx;
   box-sizing: border-box;
+  /* 确保滚动行为正常 */
+  white-space: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-cards-container {
   display: flex;
   flex-wrap: nowrap;
   padding: 24rpx 0;
-  gap: 24rpx;
+  gap: 32rpx;
+  /* 确保容器宽度足够，强制滚动 */
+  width: max-content;
+  min-width: 100%;
 }
 
 .data-card {
@@ -383,11 +447,11 @@ export default {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 180rpx;
+  width: 240rpx; /* 增加宽度从180rpx到240rpx */
   height: 200rpx;
   background: #ffffff;
   border-radius: 24rpx;
-  padding: 24rpx 16rpx;
+  padding: 24rpx 20rpx; /* 增加左右内边距 */
   box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.07);
   border: 1rpx solid rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
@@ -528,7 +592,7 @@ export default {
 /* 滑动提示 */
 .scroll-hint {
   text-align: center;
-  padding: 20rpx 0 16rpx;
+  padding: 20rpx 0 16rpx; /* 增加上方间距 */
 }
 
 .hint-text {
@@ -556,165 +620,221 @@ export default {
   display: block;
 }
 
-/* 网格布局 */
-.management-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32rpx;
-  padding: 32rpx 40rpx;
-  background: #f8fafc;
+/* 营销模块样式 */
+.marketing-section {
+  background: white;
+  border-radius: 16rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
-/* 管理卡片 */
-.management-card {
-  background: white;
-  border-radius: 24rpx;
-  overflow: hidden;
-  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.06), 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 1rpx solid rgba(0, 0, 0, 0.04);
-  position: relative;
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1rpx solid #e2e8f0;
   
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.35s ease;
-    pointer-events: none;
+  .section-icon {
+    font-size: 36rpx;
+    margin-right: 16rpx;
   }
   
-  &:active {
-    transform: translateY(-6rpx) scale(0.98);
-    box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.12), 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  .section-title {
+    flex: 1;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #334155;
+  }
+  
+  .section-count {
+    font-size: 24rpx;
+    color: #64748b;
+    background: rgba(41, 111, 183, 0.1);
+    padding: 8rpx 16rpx;
+    border-radius: 20rpx;
+    font-weight: 500;
+  }
+}
+
+/* 营销内容列表 */
+.content-list {
+  padding: 24rpx 32rpx;
+}
+
+.content-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f1f5f9;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  .content-icon {
+    font-size: 32rpx;
+    margin-right: 20rpx;
+  }
+  
+  .content-info {
+    flex: 1;
     
-    &::after {
-      opacity: 1;
+    .content-title {
+      display: block;
+      font-size: 28rpx;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8rpx;
+    }
+    
+    .content-desc {
+      font-size: 24rpx;
+      color: #64748b;
+    }
+  }
+  
+  .content-status {
+    padding: 8rpx 16rpx;
+    border-radius: 16rpx;
+    font-size: 22rpx;
+    font-weight: 500;
+    
+    &.published {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    &.active {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    
+    &.pending {
+      background: #fef3c7;
+      color: #92400e;
     }
   }
 }
 
-.card-gradient {
-  height: 140rpx;
-  padding: 24rpx;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
+/* 营销渠道列表 */
+.channel-list {
+  padding: 24rpx 32rpx;
 }
 
-/* 不同卡片的渐变色 */
-.channels-card .card-gradient {
-  background: linear-gradient(135deg, #ff7d00 0%, #ff9a3e 100%);
-}
-
-.content-card .card-gradient {
-  background: linear-gradient(135deg, #296FB7 0%, #4A90E2 100%);
-}
-
-.feedback-card .card-gradient {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-}
-
-.analytics-card .card-gradient {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-}
-
-.card-icon-large {
-  font-size: 56rpx;
-  filter: drop-shadow(0 4rpx 12rpx rgba(0, 0, 0, 0.25));
-}
-
-.card-badge {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10rpx);
-  color: white;
-  font-size: 22rpx;
-  font-weight: 700;
-  padding: 8rpx 16rpx;
-  border-radius: 24rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.4);
-  align-self: flex-start;
-  letter-spacing: 0.5rpx;
-}
-
-.card-body {
-  padding: 24rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.card-title {
-  font-size: 32rpx;
-  font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 6rpx;
-  letter-spacing: 0.5rpx;
-  line-height: 1.4;
-}
-
-.card-subtitle {
-  font-size: 24rpx;
-  color: #64748b;
-  margin-bottom: 20rpx;
-  text-transform: uppercase;
-  letter-spacing: 1rpx;
-  font-weight: 600;
-  opacity: 0.85;
-}
-
-.card-stats {
+.channel-item {
   display: flex;
   align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f1f5f9;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  .channel-icon {
+    font-size: 32rpx;
+    margin-right: 20rpx;
+  }
+  
+  .channel-info {
+    flex: 1;
+    
+    .channel-name {
+      display: block;
+      font-size: 28rpx;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8rpx;
+    }
+    
+    .channel-stats {
+      font-size: 24rpx;
+      color: #64748b;
+    }
+  }
+  
+  .channel-indicator {
+    width: 12rpx;
+    height: 12rpx;
+    border-radius: 50%;
+    margin-left: 16rpx;
+    
+    &.active {
+      background: #10b981;
+      box-shadow: 0 0 8rpx rgba(16, 185, 129, 0.4);
+    }
+    
+    &.inactive {
+      background: #cbd5e1;
+    }
+  }
+}
+
+/* 任务状态概览 */
+.task-status-overview {
+  display: flex;
+  padding: 32rpx;
   gap: 24rpx;
-  padding-top: 20rpx;
-  border-top: 2rpx solid #f1f5f9;
 }
 
-.stat-item {
+.task-status-item {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.stat-label {
-  font-size: 24rpx;
-  color: #94a3b8;
-  font-weight: 600;
-  letter-spacing: 0.5rpx;
   text-align: center;
+  padding: 24rpx 16rpx;
+  border-radius: 16rpx;
+  
+  .task-status-count {
+    display: block;
+    font-size: 40rpx;
+    font-weight: 700;
+    margin-bottom: 8rpx;
+  }
+  
+  .task-status-label {
+    font-size: 24rpx;
+    font-weight: 500;
+  }
+  
+  &.completed {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    
+    .task-status-count {
+      color: #166534;
+    }
+    
+    .task-status-label {
+      color: #15803d;
+    }
+  }
+  
+  &.active {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    
+    .task-status-count {
+      color: #1d4ed8;
+    }
+    
+    .task-status-label {
+      color: #2563eb;
+    }
+  }
+  
+  &.pending {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    
+    .task-status-count {
+      color: #92400e;
+    }
+    
+    .task-status-label {
+      color: #d97706;
+    }
+  }
 }
 
-.stat-value {
-  font-size: 32rpx;
-  font-weight: 900;
-  color: #296FB7;
-  letter-spacing: -0.5rpx;
-  text-align: center;
-  line-height: 1.2;
-}
 
-.stat-divider {
-  width: 1rpx;
-  height: 32rpx;
-  background: #e9ecef;
-}
 
-/* 移除旧的按钮样式 */
-.action-buttons,
-.action-btn,
-.btn-content,
-.btn-icon-wrapper,
-.btn-icon,
-.btn-info,
-.btn-title,
-.btn-desc,
-.btn-arrow {
-  display: none;
-}
+
 </style>
