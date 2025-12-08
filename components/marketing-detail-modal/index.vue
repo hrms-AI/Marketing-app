@@ -29,7 +29,7 @@
                 v-for="(item, index) in dataCards" 
                 :key="index"
                 class="data-card"
-                :class="`${item.type}-card`"
+                :class="item.type + '-card'"
               >
                 <view class="card-icon-bg">
                   <text class="card-icon">{{ item.icon }}</text>

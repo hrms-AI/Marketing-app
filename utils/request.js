@@ -1,6 +1,10 @@
 /**
  * 网络请求封装
  * 符合uni-app规范的HTTP请求工具
+ * 
+ * 🚀 当前运行模式：纯前端模式
+ * 📝 说明：所有网络请求功能保留但不会发送真实请求
+ * 💡 数据来源：本地 mock 数据和组件内部状态
  */
 import { config, constants } from './config.js'
 

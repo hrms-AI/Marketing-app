@@ -55,6 +55,33 @@ export default {
       this.isAgreed = !this.isAgreed;
     },
     
+    // 纯前端模式：模拟登录接口
+    async mockLogin(credentials) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // 模拟登录验证
+          if (credentials.username === 'admin' && credentials.password === 'Adm@123456') {
+            resolve({
+              code: 200,
+              message: '登录成功',
+              data: {
+                token: 'mock_token_' + Date.now(),
+                id: 'user_123',
+                userId: 'user_123',
+                username: credentials.username,
+                role: 'admin',
+                email: 'admin@example.com',
+                phone: '13800138000',
+                nickname: '管理员'
+              }
+            });
+          } else {
+            reject(new Error('账号或密码错误'));
+          }
+        }, 800); // 模拟网络延迟
+      });
+    },
+    
     // 登录方法
     async onLogin() {
       console.log('点击登录按钮');
@@ -98,13 +125,13 @@ export default {
           password: this.password
         });
 
-        // 调用登录API
-        const result = await this.$api.userApi.login({
+        // 纯前端模式：使用本地模拟登录
+        const result = await this.mockLogin({
           username: this.account,
           password: this.password
         });
         
-        console.log('登录API返回结果:', result);
+        console.log('模拟登录返回结果:', result);
         
         // 第五步：根据登录接口返回结果处理
         if (result && result.data && result.data.token) {

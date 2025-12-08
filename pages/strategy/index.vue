@@ -30,12 +30,10 @@
         :year-index="yearIndex"
         :month-index="monthIndex"
         :date-range="dateRange"
-        :generating="generating"
         :scheduled-count="scheduledTasksCount"
         :pending-count="pendingTasksCount"
         :published-count="publishedTasksCount"
         @date-change="onDateChange"
-        @ai-generate="handleAIGenerate"
         @view-plan="handleViewPlan"
       />
 
@@ -47,7 +45,6 @@
           :month="selectedMonth"
           @date-click="handleDateClick"
           @task-click="handleTaskClick"
-          @ai-generate="handleAIGenerate"
           @manual-add="openAddModal"
         />
       </view>
@@ -84,16 +81,6 @@
       @cancel="closeAddModal"
     />
 
-    <!-- AI生成月度计划弹窗 -->
-    <ai-generate-modal
-      :visible="showAIGenerateModal"
-      :year="selectedYear"
-      :month="selectedMonth"
-      :hotel-name="selectedHotelName"
-      @confirm="confirmAIGenerate"
-      @cancel="cancelAIGenerate"
-    />
-
     <!-- 活动策划弹窗 -->
     <activity-plan-modal
       :visible="showActivityPlanModal"
@@ -121,7 +108,6 @@
 <script>
 import { userApi } from '../../utils/api'
 import MarketingDetailModal from '../../components/marketing-detail-modal/index.vue'
-import AIGenerateModal from '../../components/ai-generate-modal/index.vue'
 import ActivityPlanModal from '../../components/activity-plan-modal/index.vue'
 import TaskDetailModal from '../../components/task-detail-modal/index.vue'
 import AddTaskModal from '../../components/add-task-modal/index.vue'
@@ -139,7 +125,6 @@ export default {
   
   components: {
     MarketingDetailModal,
-    AIGenerateModal,
     ActivityPlanModal,
     TaskDetailModal,
     AddTaskModal,

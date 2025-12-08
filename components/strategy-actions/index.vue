@@ -11,14 +11,8 @@
       </picker>
     </view>
 
-    <!-- AI生成按钮 -->
+    <!-- 查看营销计划按钮 -->
     <view class="ai-action-area">
-      <button class="ai-generate-btn" @click="handleGenerate" :disabled="generating">
-        <text class="btn-icon">{{ generating ? '⏳' : '✨' }}</text>
-        <text class="btn-text">{{ generating ? '生成中...' : 'AI一键生成下月度营销计划' }}</text>
-      </button>
-      
-      <!-- 查看本月度营销计划按钮 -->
       <button class="view-plan-btn" @click="handleViewPlan">
         <text class="btn-icon">📋</text>
         <text class="btn-text">查看本月度营销计划</text>
@@ -63,10 +57,6 @@ export default {
       type: Array,
       default: () => [[], []]
     },
-    generating: {
-      type: Boolean,
-      default: false
-    },
     scheduledCount: {
       type: Number,
       default: 0
@@ -92,11 +82,10 @@ export default {
     handleDateChange(e) {
       this.$emit('date-change', e)
     },
-    handleGenerate() {
-      this.$emit('ai-generate')
-    },
     handleViewPlan() {
+      console.log('策略操作组件：点击了查看计划按钮')
       this.$emit('view-plan')
+      console.log('策略操作组件：已发送view-plan事件')
     }
   }
 }
@@ -147,46 +136,13 @@ export default {
   gap: 16rpx;
 }
 
-.ai-generate-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #296FB7 0%, #4A90E2 100%);
-  color: #fff;
-  border: none;
-  border-radius: 12rpx;
-  padding: 2rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16rpx;
-  box-shadow: 0 8rpx 24rpx rgba(41, 111, 183, 0.3);
-  transition: all 0.3s ease;
-  
-  &:disabled {
-    opacity: 0.7;
-    transform: none;
-  }
-  
-  &:active {
-    transform: translateY(2rpx);
-  }
-  
-  .btn-icon {
-    font-size: 36rpx;
-  }
-  
-  .btn-text {
-    font-size: 32rpx;
-    font-weight: 600;
-  }
-}
-
 .view-plan-btn {
   width: 100%;
   background: #fff;
   color: #296FB7;
   border: 2rpx solid #296FB7;
   border-radius: 12rpx;
-  padding: 2rpx;
+  padding: 14rpx;
   display: flex;
   align-items: center;
   justify-content: center;

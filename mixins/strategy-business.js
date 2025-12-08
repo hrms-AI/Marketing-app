@@ -60,6 +60,19 @@ export default {
   methods: {
     // ========== 弹窗控制方法 ==========
     
+    // 查看营销计划
+    handleViewPlan() {
+      console.log('业务逻辑：收到查看营销计划事件')
+      console.log('当前年月:', this.selectedYear, this.selectedMonth)
+      
+      // 跳转到营销计划详情页面
+      uni.navigateTo({
+        url: `/pages/marketing-plan/index?year=${this.selectedYear}&month=${this.selectedMonth}&hotelName=${encodeURIComponent(this.selectedHotelName || '当前酒店')}`
+      })
+      
+      console.log('业务逻辑：已跳转到营销计划页面')
+    },
+    
     // 关闭任务详情弹窗
     closeTaskModal() {
       this.showTaskModal = false

@@ -23,11 +23,7 @@
         <text class="tab-text">视频素材</text>
         <view v-if="activeTab === 'video'" class="tab-underline"></view>
       </view>
-      <view class="tab-item" :class="{'active': activeTab === 'income'}" @click="switchTab('income')">
-        <text class="tab-text">收益素材</text>
-        <view v-if="activeTab === 'income'" class="tab-underline"></view>
-      </view>
-       <view class="tab-item" :class="{'active': activeTab === 'finished'}" @click="switchTab('finished')">
+      <view class="tab-item" :class="{'active': activeTab === 'finished'}" @click="switchTab('finished')">
         <text class="tab-text">成品库</text>
         <view v-if="activeTab === 'finished'" class="tab-underline"></view>
       </view>
@@ -45,7 +41,7 @@
     <!-- 成品库说明区 -->
     <view class="finished-info-section" v-if="activeTab === 'finished'">
       <view class="finished-title">成品库</view>
-      <view class="finished-desc">展示所有已完成的营销素材作品</view>
+      <view class="finished-desc">展示营销素材的完成状态和待执行任务</view>
     </view>
 
     <!-- 素材库和日期选择器 -->
@@ -73,8 +69,78 @@
       </view>
     </view>
 
-    <!-- 九宫格素材库 -->
-    <view class="material-content">
+    <!-- 成品库双区域布局 -->
+    <view v-if="activeTab === 'finished'" class="finished-content">
+      <!-- 已完成区域 -->
+      <view class="finished-section">
+        <view class="section-header">
+          <view class="header-left">
+            <text class="section-icon">✅</text>
+            <text class="section-title">已完成</text>
+          </view>
+          <text class="section-count">{{ completedItems.length }}项</text>
+        </view>
+        <view class="section-grid">
+          <view 
+            v-for="(item, index) in completedItems" 
+            :key="item.id"
+            class="finished-item completed-item"
+            :class="{'selected': selectedItems.includes(item.id), 'edit-mode': isEditMode}"
+            @click="handleItemClick(item.id)"
+          >
+            <view class="item-content">
+              <text class="item-icon">🎨</text>
+              <text class="item-title">{{ item.title }}</text>
+              <text class="item-status completed-status">{{ item.status }}</text>
+            </view>
+            <!-- 选中状态指示器 -->
+            <view v-if="selectedItems.includes(item.id)" class="select-indicator">
+              <view class="edit-icon-wrapper">
+                <text class="edit-icon">✎</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 待执行区域 -->
+      <view class="finished-section">
+        <view class="section-header">
+          <view class="header-left">
+            <text class="section-icon">⏳</text>
+            <text class="section-title">待执行</text>
+          </view>
+          <text class="section-count">{{ pendingItems.length }}项</text>
+        </view>
+        <view class="section-grid">
+          <view 
+            v-for="(item, index) in pendingItems" 
+            :key="item.id"
+            class="finished-item pending-item"
+            :class="{'selected': selectedItems.includes(item.id), 'edit-mode': isEditMode}"
+            @click="handleItemClick(item.id)"
+          >
+            <view class="item-content">
+              <text class="item-icon">📋</text>
+              <text class="item-title">{{ item.title }}</text>
+              <text class="item-status pending-status">{{ item.status }}</text>
+            </view>
+            <!-- 选中状态指示器 -->
+            <view v-if="selectedItems.includes(item.id)" class="select-indicator">
+              <view class="edit-icon-wrapper">
+                <text class="edit-icon">✎</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 底部渐变遮罩 -->
+      <view class="bottom-mask"></view>
+    </view>
+
+    <!-- 九宫格素材库（图片和视频） -->
+    <view v-else class="material-content">
       <view class="material-grid">
         <view 
           v-for="(item, index) in currentMaterialData" 
@@ -90,14 +156,6 @@
             </view>
             <view v-else-if="activeTab === 'video'" class="video-placeholder">
               <text class="material-type-icon">▶️</text>
-            </view>
-            <view v-else-if="activeTab === 'income'" class="file-placeholder">
-              <text class="material-type-icon">📊</text>
-              <text class="file-name">{{ item.name }}</text>
-            </view>
-            <view v-else-if="activeTab === 'finished'" class="finished-placeholder">
-              <text class="material-type-icon">🎨</text>
-              <text class="finished-name">{{ item.title }}</text>
             </view>
           </view>
           
@@ -131,12 +189,12 @@ export default {
       selectedDate: '',
       selectedItems: [], // 选中的素材项
       isEditMode: false, // 编辑模式状态
+      isDestroyed: false, // 组件是否已销毁
       // 不同类型素材的数据
       materialData: {
         image: [], // 图片素材数据
         video: [], // 视频素材数据  
-        income: [], // 收益素材数据
-        finished: [] // 成品库数据
+        finished: [] // 成品库数据（包含已完成和待执行）
       }
     }
   },
@@ -154,6 +212,14 @@ export default {
     // 初始化一些示例数据
     this.initSampleData();
   },
+  beforeDestroy() {
+    // 标记组件已销毁，防止异步操作继续执行
+    this.isDestroyed = true;
+  },
+  onUnload() {
+    // uni-app 页面卸载时也需要标记
+    this.isDestroyed = true;
+  },
   computed: {
     // 当前标签页的素材数据
     currentMaterialData() {
@@ -163,12 +229,19 @@ export default {
     currentMaterialCount() {
       return this.currentMaterialData.length;
     },
+    // 已完成的素材
+    completedItems() {
+      return this.materialData.finished.filter(item => item.category === 'completed');
+    },
+    // 待执行的素材
+    pendingItems() {
+      return this.materialData.finished.filter(item => item.category === 'pending');
+    },
     // 上传区域的提示文字
     uploadText() {
       switch(this.activeTab) {
         case 'image': return '上传图片';
         case 'video': return '上传视频';  
-        case 'income': return '上传文件';
         case 'finished': return '仅展示'; // 成品库不允许上传
         default: return '点击上传';
       }
@@ -178,7 +251,6 @@ export default {
       switch(this.activeTab) {
         case 'image': return '📷';
         case 'video': return '🎬';
-        case 'income': return '📄';
         case 'finished': return '🎨'; // 成品库图标
         default: return '📷';
       }
@@ -206,9 +278,6 @@ export default {
       } else if (currentTab === 'video') {
         // 上传视频
         this.uploadVideos();
-      } else if (currentTab === 'income') {
-        // 上传文件
-        this.uploadFiles();
       }
     },
     
@@ -225,6 +294,9 @@ export default {
           // 这里可以批量上传图片到服务器
           // 模拟上传过程
           setTimeout(() => {
+            // 检查组件是否已销毁
+            if (this.isDestroyed) return;
+            
             // 将上传的图片添加到数据中
             tempFilePaths.forEach(path => {
               this.materialData.image.push({
@@ -274,6 +346,9 @@ export default {
           
           // 模拟上传过程
           setTimeout(() => {
+            // 检查组件是否已销毁
+            if (this.isDestroyed) return;
+            
             this.materialData.video.push({
               id: Date.now(),
               type: 'video',
@@ -306,141 +381,6 @@ export default {
       });
     },
     
-    // 上传文件
-    uploadFiles() {
-      // 使用选择文档的方式，支持多种文件类型
-      uni.chooseFile({
-        count: 10,
-        extension: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip', 'rar'],
-        success: (res) => {
-          uni.showLoading({ title: '上传中...' });
-          setTimeout(() => {
-            res.tempFiles.forEach(file => {
-              this.materialData.income.push({
-                id: Date.now() + Math.random(),
-                type: 'file',
-                name: file.name,
-                size: file.size,
-                path: file.path,
-                uploadTime: new Date().toLocaleString()
-              });
-            });
-            
-            uni.hideLoading();
-            uni.showToast({
-              title: `成功上传${res.tempFiles.length}个文件`,
-              icon: 'success'
-            });
-          }, 1000);
-        },
-        fail: (error) => {
-          console.log('文件选择失败:', error);
-          // 如果chooseFile不可用，尝试使用其他方式
-          this.uploadFilesAlternative();
-        }
-      });
-    },
-    
-    // 备用文件上传方案
-    uploadFilesAlternative() {
-      // 显示文件类型选择
-      uni.showActionSheet({
-        itemList: ['选择图片', '选择视频', '选择文档（通过分享）'],
-        success: (res) => {
-          if (res.tapIndex === 0) {
-            // 选择图片作为文件
-            uni.chooseImage({
-              count: 9,
-              success: (imgRes) => {
-                uni.showLoading({ title: '上传中...' });
-                setTimeout(() => {
-                  imgRes.tempFilePaths.forEach((path, index) => {
-                    this.materialData.income.push({
-                      id: Date.now() + Math.random() + index,
-                      type: 'file',
-                      name: `图片文件_${Date.now()}.jpg`,
-                      size: 0,
-                      path: path,
-                      uploadTime: new Date().toLocaleString()
-                    });
-                  });
-                  uni.hideLoading();
-                  uni.showToast({
-                    title: `成功上传${imgRes.tempFilePaths.length}个文件`,
-                    icon: 'success'
-                  });
-                }, 1000);
-              }
-            });
-          } else if (res.tapIndex === 1) {
-            // 选择视频作为文件
-            uni.chooseVideo({
-              success: (videoRes) => {
-                uni.showLoading({ title: '上传中...' });
-                setTimeout(() => {
-                  this.materialData.income.push({
-                    id: Date.now(),
-                    type: 'file',
-                    name: `视频文件_${Date.now()}.mp4`,
-                    size: videoRes.size || 0,
-                    path: videoRes.tempFilePath,
-                    uploadTime: new Date().toLocaleString()
-                  });
-                  uni.hideLoading();
-                  uni.showToast({
-                    title: '成功上传1个文件',
-                    icon: 'success'
-                  });
-                }, 1000);
-              }
-            });
-          } else if (res.tapIndex === 2) {
-            // 提示用户通过其他方式分享文档
-            uni.showModal({
-              title: '文档上传提示',
-              content: '由于平台限制，请通过以下方式上传文档：\n1. 从其他应用分享到本应用\n2. 或先保存到相册再选择\n\n当前演示添加示例文件。',
-              success: (modalRes) => {
-                if (modalRes.confirm) {
-                  // 添加示例文档
-                  this.addSampleDocuments();
-                }
-              }
-            });
-          }
-        },
-        fail: () => {
-          uni.showToast({ title: '取消上传', icon: 'none' });
-        }
-      });
-    },
-    
-    // 添加示例文档
-    addSampleDocuments() {
-      const sampleDocs = [
-        { name: '营销方案.pdf', type: 'pdf' },
-        { name: '数据报告.xlsx', type: 'excel' },
-        { name: '产品介绍.docx', type: 'word' }
-      ];
-      
-      uni.showLoading({ title: '添加文件中...' });
-      setTimeout(() => {
-        sampleDocs.forEach((doc, index) => {
-          this.materialData.income.push({
-            id: Date.now() + index,
-            type: 'file',
-            name: doc.name,
-            size: Math.floor(Math.random() * 1000000) + 100000, // 随机文件大小
-            path: '',
-            uploadTime: new Date().toLocaleString()
-          });
-        });
-        uni.hideLoading();
-        uni.showToast({
-          title: `成功添加${sampleDocs.length}个文件`,
-          icon: 'success'
-        });
-      }, 1000);
-    },
     onDateChange(e) {
       this.selectedDate = e.detail.value;
     },
@@ -522,26 +462,30 @@ export default {
         });
       }
       
-      // 收益素材示例数据
-      for(let i = 1; i <= 6; i++) {
-        this.materialData.income.push({
-          id: i,
-          type: 'file',
-          name: `收益报告_${i}.pdf`,
-          size: 1024000,
-          uploadTime: '2024-08-12'
+      // 成品库示例数据（包含已完成和待执行）
+      // 已完成素材
+      for(let i = 1; i <= 8; i++) {
+        this.materialData.finished.push({
+          id: `completed_${i}`,
+          type: 'finished',
+          title: `营销方案_${i}`,
+          category: 'completed', // 用category区分已完成和待执行
+          status: '已完成',
+          createTime: '2024-12-06',
+          completedDate: '2024-12-05'
         });
       }
       
-      // 成品库示例数据
-      for(let i = 1; i <= 12; i++) {
+      // 待执行素材
+      for(let i = 1; i <= 6; i++) {
         this.materialData.finished.push({
-          id: i,
+          id: `pending_${i}`,
           type: 'finished',
-          title: `营销方案_${i}`,
-          category: i % 2 === 0 ? '图文方案' : '视频方案',
-          status: '已完成',
-          createTime: '2024-08-12'
+          title: `营销任务_${i}`,
+          category: 'pending', // 用category区分已完成和待执行
+          status: i % 2 === 0 ? '待审核' : '进行中',
+          createTime: '2024-12-06',
+          deadline: '2024-12-15'
         });
       }
     },
@@ -847,19 +791,19 @@ export default {
             }
           }
 
-          .finished-placeholder {
+          .completed-placeholder {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #f0f8ff;
+            background: #f0f9ff;
             padding: 16rpx;
 
-            .finished-name {
+            .completed-name {
               font-size: 20rpx;
-              color: #8b5a00;
+              color: #065f46;
               text-align: center;
               margin-top: 8rpx;
               overflow: hidden;
@@ -867,6 +811,49 @@ export default {
               white-space: nowrap;
               width: 100%;
               font-weight: 500;
+            }
+
+            .completed-status {
+              font-size: 18rpx;
+              color: #059669;
+              text-align: center;
+              margin-top: 4rpx;
+              background: #d1fae5;
+              padding: 2rpx 8rpx;
+              border-radius: 8rpx;
+            }
+          }
+
+          .pending-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fef3c7;
+            padding: 16rpx;
+
+            .pending-name {
+              font-size: 20rpx;
+              color: #92400e;
+              text-align: center;
+              margin-top: 8rpx;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              width: 100%;
+              font-weight: 500;
+            }
+
+            .pending-status {
+              font-size: 18rpx;
+              color: #d97706;
+              text-align: center;
+              margin-top: 4rpx;
+              background: #fed7aa;
+              padding: 2rpx 8rpx;
+              border-radius: 8rpx;
             }
           }
 
@@ -1036,6 +1023,172 @@ export default {
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.4);
+  }
+}
+
+/* 成品库双区域布局样式 */
+.finished-content {
+  flex: 1;
+  padding: 0 32rpx 120rpx 32rpx;
+  overflow-y: auto;
+}
+
+.finished-section {
+  margin-bottom: 40rpx;
+  
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24rpx 0;
+    border-bottom: 2rpx solid #f0f0f0;
+    margin-bottom: 24rpx;
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12rpx;
+    }
+    
+    .section-icon {
+      font-size: 32rpx;
+    }
+    
+    .section-title {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .section-count {
+      font-size: 24rpx;
+      color: #666;
+      background: #f5f5f5;
+      padding: 8rpx 16rpx;
+      border-radius: 16rpx;
+    }
+  }
+  
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24rpx;
+  }
+}
+
+.finished-item {
+  position: relative;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: 2rpx solid transparent;
+  
+  &.completed-item {
+    border-left: 6rpx solid #10b981;
+    
+    .item-content {
+      .item-status {
+        background: #d1fae5;
+        color: #065f46;
+      }
+    }
+  }
+  
+  &.pending-item {
+    border-left: 6rpx solid #f59e0b;
+    
+    .item-content {
+      .item-status {
+        background: #fed7aa;
+        color: #92400e;
+      }
+    }
+  }
+  
+  &.selected {
+    border-color: #ff7d00;
+    background: linear-gradient(135deg, #fff 0%, #fff8f1 100%);
+    transform: translateY(-2rpx);
+    box-shadow: 0 8rpx 24rpx rgba(255, 125, 0, 0.15);
+    
+    .select-indicator {
+      opacity: 1;
+    }
+  }
+  
+  &.edit-mode:not(.selected) {
+    border-color: rgba(255, 125, 0, 0.3);
+    cursor: pointer;
+    
+    &:active {
+      transform: translateY(1rpx);
+    }
+  }
+  
+  .item-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12rpx;
+    
+    .item-icon {
+      font-size: 48rpx;
+    }
+    
+    .item-title {
+      font-size: 28rpx;
+      font-weight: 500;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+    
+    .item-status {
+      font-size: 24rpx;
+      padding: 6rpx 12rpx;
+      border-radius: 12rpx;
+      font-weight: 500;
+      
+      &.completed-status {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      
+      &.pending-status {
+        background: #fed7aa;
+        color: #92400e;
+      }
+    }
+  }
+  
+  .select-indicator {
+    position: absolute;
+    bottom: 8rpx;
+    right: 8rpx;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    
+    .edit-icon-wrapper {
+      background: #ff7d00;
+      border-radius: 50%;
+      width: 48rpx;
+      height: 48rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2rpx 8rpx rgba(255, 125, 0, 0.3);
+      
+      .edit-icon {
+        font-size: 24rpx;
+        color: #fff;
+        font-weight: 600;
+      }
+    }
   }
 }
 
