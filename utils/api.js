@@ -1,117 +1,345 @@
 /**
  * API接口统一管理
- * 集中管理所有接口地址
- * 注意：当前为纯前端模式，所有后端接口已注释
+ * 基于后端 OpenAPI 3.0.2 规范设计
+ * 服务器地址: http://115.190.97.154:7000
+ * 遵循小程序接口规范，去掉接口注释
  */
-// import http from './request.js'
+import http from './request.js'
 
 /**
- * 用户相关接口
- * 当前注释掉，使用本地存储模拟
+ * 用户端接口模块 (前缀: /api/u/)
+ * 专门为普通用户提供的接口功能
  */
 export const userApi = {
-  // 用户登录 - 已注释，使用本地模拟
-  // login: (data) => http.post('/api/auth/login', data),
+  /**
+   * 获取酒店详情
+   * GET /api/u/query_hotel_all
+   */
+  getHotelAll: () => {
+    console.log('API层 - 调用获取酒店详情接口: GET /api/u/query_hotel_all')
+    return http.get('/api/u/query_hotel_all')
+  },
 
-  // 获取用户绑定的酒店信息 - 已注释，使用本地模拟
-  // getHotelInfo: (userId) => http.get(`/api/auth/user/hotel_info/${userId}`),
-  
+  /**
+   * 获取酒店素材列表
+   * GET /api/u/query_hotel_material_list
+   */
+  getHotelMaterialList: (data) => {
+    console.log('API层 - 调用获取酒店素材列表接口:', data)
+    return http.get('/api/u/query_hotel_material_list', data)
+  },
+
+  /**
+   * 批量删除酒店素材
+   * GET /api/u/batch_delete_hotel_material
+   */
+  batchDeleteHotelMaterial: (data) => {
+    console.log('API层 - 调用批量删除酒店素材接口:', data)
+    return http.get('/api/u/batch_delete_hotel_material', data)
+  },
+
+  /**
+   * 获取酒店日历营销计划
+   * GET /api/u/calender_marketing
+   */
+  getCalenderMarketing: (params) => {
+    console.log('API层 - 调用获取日历营销计划接口:', params)
+    return http.get('/api/u/calender_marketing', params)
+  }
 }
 
 /**
- * 团队相关接口
- * 当前注释掉，使用本地数据模拟
+ * 账户管理接口模块
  */
-export const teamApi = {
-  // 获取团队成员列表 - 已注释
-  // getTeamMembers: () => http.get('/api/team/members'),
-  
-  // 获取营销任务列表 - 已注释
-  // getMarketingTasks: (params) => http.get('/api/marketing/tasks', params),
+export const accountApi = {
+  /**
+   * 微信账户登录（账号密码方式）
+   * POST /api/account/wechat_login
+   */
+  login: (data) => {
+    const loginData = {
+      username: data.username,
+      password: data.password
+    }
+    return http.post('/api/account/wechat_login', loginData).then(response => {
+      return response
+    }).catch(error => {
+      console.error('登录失败:', error)
+      throw error
+    })
+  },
+
+  /**
+   * 微信一键登录（获取code后查询用户信息）
+   * GET /api/account/wechat_user_info
+   */
+  wechatUserInfo: (params) => {
+    console.log('API层 - 获取微信用户信息:', params)
+    return http.get('/api/account/wechat_user_info', params)
+  },
+
+  /**
+   * 微信用户注册
+   * POST /api/account/wechat_register
+   */
+  wechatRegister: (data) => {
+    console.log('API层 - 微信用户注册:', data)
+    return http.post('/api/account/wechat_register', data)
+  },
+
+  /**
+   * 账户登录
+   * POST /api/account/login
+   */
+  accountLogin: (data) => {
+    return http.post('/api/account/login', data)
+  },
+
+  /**
+   * 账户注册
+   * POST /api/account/register
+   */
+  register: (data) => {
+    return http.post('/api/account/register', data)
+  },
+
+  /**
+   * 获取用户信息
+   * GET /api/account/user_info
+   */
+  getUserInfo: () => {
+    return http.get('/api/account/user_info')
+  },
+
+  /**
+   * 账户登出
+   * POST /api/account/logout
+   */
+  logout: () => {
+    return http.post('/api/account/logout')
+  }
 }
 
 /**
- * 营销策略相关接口
- * 当前注释掉，使用本地数据模拟
+ * 管理端 - 酒店管理接口模块 (前缀: /api/m/hotel/)
  */
-export const strategyApi = {
-  // 获取营销计划 - 已注释
-  // getMarketingPlans: (params) => http.get('/api/strategy/plans', params),
-  
-  // AI生成营销计划 - 已注释
-  // generateMarketingPlan: (data) => http.post('/api/strategy/ai-generate', data),
+export const hotelApi = {
+  /**
+   * 查询酒店列表
+   * GET /api/m/hotel/query_list
+   */
+  queryList: (params) => {
+    console.log('API层 - 调用酒店列表查询接口:', params)
+    return http.get('/api/m/hotel/query_list', params)
+  },
+
+  /**
+   * 创建酒店
+   * POST /api/m/hotel/create
+   */
+  create: (data) => {
+    console.log('API层 - 调用创建酒店接口:', data)
+    return http.post('/api/m/hotel/create', data)
+  },
+
+  /**
+   * 更新酒店信息
+   * PUT /api/m/hotel/update
+   */
+  update: (data) => {
+    console.log('API层 - 调用更新酒店接口:', data)
+    return http.put('/api/m/hotel/update', data)
+  },
+
+  /**
+   * 删除酒店
+   * DELETE /api/m/hotel/delete
+   */
+  delete: (data) => {
+    console.log('API层 - 调用删除酒店接口:', data)
+    return http.delete('/api/m/hotel/delete', data)
+  }
 }
 
 /**
- * 素材管理相关接口
- * 当前注释掉，使用本地数据模拟
+ * 管理端 - 素材管理接口模块 (前缀: /api/m/material/)
  */
 export const materialApi = {
-  // 获取素材列表 - 已注释
-  // getMaterialList: (params) => http.get('/api/materials', params),
+  /**
+   * 查询素材列表
+   * GET /api/m/material/query_list
+   */
+  queryList: (params) => {
+    console.log('API层 - 调用素材列表查询接口:', params)
+    return http.get('/api/m/material/query_list', params)
+  },
+
+  /**
+   * 创建素材
+   * POST /api/m/material/create
+   */
+  create: (data) => {
+    console.log('API层 - 调用创建素材接口:', data)
+    return http.post('/api/m/material/create', data)
+  },
+
+  /**
+   * 更新素材信息
+   * PUT /api/m/material/update
+   */
+  update: (data) => {
+    console.log('API层 - 调用更新素材接口:', data)
+    return http.put('/api/m/material/update', data)
+  },
+
+  /**
+   * 删除素材
+   * DELETE /api/m/material/delete
+   */
+  delete: (data) => {
+    console.log('API层 - 调用删除素材接口:', data)
+    return http.delete('/api/m/material/delete', data)
+  }
+}
+
+/**
+ * 管理端 - 酒店管理员接口模块 (前缀: /api/m/hotel_admin/)
+ */
+export const hotelAdminApi = {
+  /**
+   * 查询酒店管理员列表
+   * GET /api/m/hotel_admin/query_list
+   */
+  queryList: (params) => {
+    return http.get('/api/m/hotel_admin/query_list', params)
+  },
+
+  /**
+   * 创建酒店管理员
+   * POST /api/m/hotel_admin/create
+   */
+  create: (data) => {
+    return http.post('/api/m/hotel_admin/create', data)
+  },
+
+  /**
+   * 更新酒店管理员
+   * PUT /api/m/hotel_admin/update
+   */
+  update: (data) => {
+    return http.put('/api/m/hotel_admin/update', data)
+  },
+
+  /**
+   * 删除酒店管理员
+   * DELETE /api/m/hotel_admin/delete
+   */
+  delete: (data) => {
+    return http.delete('/api/m/hotel_admin/delete', data)
+  }
+}
+
+/**
+ * 管理端 - 微信用户管理接口模块 (前缀: /api/m/wechat_user/)
+ */
+export const wechatUserApi = {
+  /**
+   * 查询微信用户列表
+   * GET /api/m/wechat_user/query_list
+   */
+  queryList: (params) => {
+    return http.get('/api/m/wechat_user/query_list', params)
+  },
+
+  /**
+   * 创建微信用户
+   * POST /api/m/wechat_user/create
+   */
+  create: (data) => {
+    return http.post('/api/m/wechat_user/create', data)
+  },
+
+  /**
+   * 更新微信用户信息
+   * PUT /api/m/wechat_user/update
+   */
+  update: (data) => {
+    return http.put('/api/m/wechat_user/update', data)
+  },
+
+  /**
+   * 删除微信用户
+   * DELETE /api/m/wechat_user/delete
+   */
+  delete: (data) => {
+    return http.delete('/api/m/wechat_user/delete', data)
+  }
+}
+
+/**
+ * 管理端 - 日历计划管理接口模块 (前缀: /api/m/calendar_plan/)
+ */
+export const calendarPlanApi = {
+  /**
+   * 查询日历计划列表
+   * GET /api/m/calendar_plan/query_list
+   */
+  queryList: (params) => {
+    return http.get('/api/m/calendar_plan/query_list', params)
+  },
+
+  /**
+   * 创建日历计划
+   * POST /api/m/calendar_plan/create
+   */
+  create: (data) => {
+    return http.post('/api/m/calendar_plan/create', data)
+  },
+
+  /**
+   * 更新日历计划
+   * PUT /api/m/calendar_plan/update
+   */
+  update: (data) => {
+    return http.put('/api/m/calendar_plan/update', data)
+  },
+
+  /**
+   * 删除日历计划
+   * DELETE /api/m/calendar_plan/delete
+   */
+  delete: (data) => {
+    return http.delete('/api/m/calendar_plan/delete', data)
+  }
+}
+
+/**
+ * 公共接口模块
+ */
+export const publicApi = {
+  /**
+   * 编辑器文件上传
+   * POST /api/m/public/editor_upload_file
+   */
+  editorUploadFile: (file) => http.upload('/api/m/public/editor_upload_file', file),
   
-  // 上传素材 - 已注释
-  // uploadMaterial: (file) => http.upload('/api/materials/upload', file),
+  /**
+   * 通用文件上传
+   * POST /api/m/public/upload_file
+   */
+  uploadFile: (file) => http.upload('/api/m/public/upload_file', file),
 }
 
 /**
- * 文件上传相关接口
- * 当前注释掉，使用本地模拟
+ * 默认导出所有API模块
  */
-export const fileApi = {
-  // 通用文件上传 - 已注释
-  // upload: (file) => http.upload('/api/files/upload', file),
-}
-
-/**
- * 通用接口
- * 当前注释掉，使用本地数据模拟
- */
-export const commonApi = {
-  // 获取配置信息 - 已注释
-  // getConfig: () => http.get('/api/common/config'),
-  
-  // 获取字典数据 - 已注释
-  // getDictData: (type) => http.get(`/api/common/dict/${type}`),
-}
-
-/**
- * 纯前端模式说明
- * 
- * 当前项目运行在纯前端模式，所有后端接口已注释
- * 数据通过以下方式模拟：
- * - 用户登录：使用 uni.setStorageSync('token', 'mock_token')
- * - 数据获取：使用组件内的 mock 数据
- * - 文件上传：使用本地文件选择器模拟
- * 
- * 示例：模拟API调用
- * 
- * // 模拟登录成功
- * const mockLogin = (data) => {
- *   return new Promise((resolve) => {
- *     setTimeout(() => {
- *       uni.setStorageSync('token', 'mock_token_' + Date.now())
- *       resolve({ code: 200, message: '登录成功', data: { userId: 'user_123' } })
- *     }, 1000)
- *   })
- * }
- * 
- * // 模拟获取数据
- * const mockGetData = () => {
- *   return new Promise((resolve) => {
- *     setTimeout(() => {
- *       resolve({ code: 200, data: [{ id: 1, name: '示例数据' }] })
- *     }, 500)
- *   })
- * }
- */
-
-// 默认导出所有API（当前为注释状态）
 export default {
   userApi,
-  teamApi,
-  strategyApi,
+  accountApi,
+  hotelApi,
   materialApi,
-  fileApi,
-  commonApi
+  hotelAdminApi,
+  wechatUserApi,
+  calendarPlanApi,
+  publicApi
 }

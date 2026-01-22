@@ -49,10 +49,21 @@ class Request {
   getToken() {
     try {
       const token = uni.getStorageSync(constants.STORAGE_KEYS.TOKEN)
-      // 如果token是JSON字符串格式，需要解析
-      if (token && token.startsWith('"') && token.endsWith('"')) {
-        return JSON.parse(token)
+      
+      // 直接返回token字符串，不需要JSON解析
+      if (token && typeof token === 'string') {
+        return token
       }
+      
+      // 如果token是JSON格式的字符串，尝试解析
+      if (token && typeof token === 'string' && token.startsWith('"') && token.endsWith('"')) {
+        try {
+          return JSON.parse(token)
+        } catch (parseError) {
+          return token
+        }
+      }
+      
       return token || ''
     } catch (error) {
       console.error('Token获取失败:', error)
@@ -65,6 +76,8 @@ class Request {
    * @param {Object} config 请求配置
    */
   requestInterceptor(config) {
+    console.log('请求拦截器 - 原始config:', config)
+    
     // 显示加载提示
     uni.showLoading({
       title: '加载中...',
@@ -73,14 +86,14 @@ class Request {
 
     // 定义不需要token的接口列表
     const noTokenApis = [
-      '/api/auth/login',        // 登录接口
-      '/api/auth/register',     // 注册接口  
-      '/api/auth/forgot',       // 忘记密码接口
-      '/api/public'             // 公共接口前缀
+      '/api/account/login',           // 原始登录接口
+      '/api/account/wechat_login',    // 小程序登录接口
+      '/api/account/register',        // 注册接口
+      '/api/auth/forgot',             // 忘记密码接口
+      '/api/public'                   // 公共接口前缀
     ]
 
     // 检查当前请求是否需要token
-    // 使用精确匹配，避免误判
     const needsToken = !noTokenApis.some(api => {
       // 对于 /api/public，使用包含匹配（前缀匹配）
       if (api === '/api/public') {
@@ -89,6 +102,8 @@ class Request {
       // 对于具体的登录接口，使用精确匹配或路径匹配
       return config.url === api || config.url.startsWith(api + '?')
     })
+
+    console.log('是否需要token:', needsToken, 'URL:', config.url)
 
     // 只有需要token的接口才添加token到请求头
     if (needsToken) {
@@ -100,16 +115,26 @@ class Request {
         }
       } else {
         console.warn('需要token但未找到token:', config.url)
-        // 不在这里直接跳转，而是让请求继续，由响应拦截器处理401错误
       }
-    } else {
     }
 
-    // 处理请求URL
-    if (config.url.indexOf('http') !== 0) {
-      config.url = this.baseURL + config.url
+    // 处理请求URL - 修复URL拼接问题
+    if (config.url && config.url.indexOf('http') !== 0) {
+      // 确保baseURL不为空，并正确拼接URL
+      const baseURL = this.baseURL || BASE_URL
+      console.log('BASE_URL:', baseURL)
+      if (baseURL) {
+        config.url = baseURL + config.url
+      } else {
+        console.error('BASE_URL未配置，请检查config.js文件')
+        uni.hideLoading()
+        throw new Error('BASE_URL未配置')
+      }
     }
 
+    console.log('请求拦截器 - 最终URL:', config.url)
+    console.log('请求拦截器 - 最终config:', config)
+    
     return config
   }
 
@@ -118,6 +143,8 @@ class Request {
    * @param {Object} response 响应数据
    */
   responseInterceptor(response) {
+    console.log('响应拦截器 - 原始响应:', response)
+    
     // 隐藏加载提示
     uni.hideLoading()
 
@@ -125,36 +152,48 @@ class Request {
 
     // HTTP状态码检查
     if (statusCode === HTTP_STATUS.SUCCESS) {
-      // 登录接口自动存储token
-      if (data && data.token) {
-        uni.setStorageSync(constants.STORAGE_KEYS.TOKEN, data.token)
-        // 存储完整的用户信息，包含token等必要信息
-        const userInfo = {
-          id: data.id,
-          username: data.username,
-          role: data.role,
-          email: data.email,
-          phone: data.phone,
-          nickname: data.nickname,
-          token: data.token // token 也是必要信息
+      console.log('响应拦截器 - HTTP状态码200，数据:', data)
+      
+      // 检查业务状态码
+      if (data && data.code === 200 && data.success === true) {
+        console.log('响应拦截器 - 业务成功，检查是否为登录接口')
+        
+        // 检查是否为登录接口返回token
+        if (data.data && data.data.token) {
+          console.log('响应拦截器 - 检测到登录token:', data.data.token)
+          
+          // 自动存储token
+          uni.setStorageSync(constants.STORAGE_KEYS.TOKEN, data.data.token)
+          
+          // 构造并存储用户信息
+          const userInfo = {
+            id: data.data.id || 'unknown',
+            username: data.data.username || 'unknown',
+            role: data.data.role || 'user',
+            email: data.data.email || '',
+            phone: data.data.phone || '',
+            nickname: data.data.nickname || '',
+            token: data.data.token
+          }
+          uni.setStorageSync(constants.STORAGE_KEYS.USER_INFO, userInfo)
+          
+          // 返回token给调用者
+          return Promise.resolve(data.data.token)
         }
-        uni.setStorageSync(constants.STORAGE_KEYS.USER_INFO, userInfo)
-        return Promise.resolve(data)
-      }
-      // 其他业务成功
-      if (data && (data.data || data.code === 200 || data.success === true)) {
-        return Promise.resolve(data)
-      } else if (data) {
-        // 其他有效响应
-        return Promise.resolve(data)
-      } else {
+        
+        // 其他成功的业务接口，返回data部分
+        return Promise.resolve(data.data || data)
+      } else if (data && data.code !== 200) {
         // 业务逻辑错误
-        this.handleBusinessError(data)
+        console.error('响应拦截器 - 业务错误:', data)
         return Promise.reject(data)
+      } else {
+        // 其他情况，直接返回数据
+        return Promise.resolve(data)
       }
     } else {
       // HTTP状态码错误
-      this.handleHttpError(statusCode)
+      console.error('响应拦截器 - HTTP错误:', statusCode, data)
       return Promise.reject(response)
     }
   }
