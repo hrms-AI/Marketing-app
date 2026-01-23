@@ -12,23 +12,24 @@ const ENV_TYPE = {
 
 // 当前环境（可以通过编译时替换或手动修改）
 const CURRENT_ENV = ENV_TYPE.DEV
-
+// 
+// http://122.51.46.128:5432
 // 不同环境的配置
 const ENV_CONFIG = {
   [ENV_TYPE.DEV]: {
-    BASE_URL: 'http://172.16.4.176:5001',
+    BASE_URL: 'http://115.190.97.154:7000',
     TIMEOUT: 15000,
     DEBUG: true,
     LOG_LEVEL: 'debug'
   },
   [ENV_TYPE.TEST]: {
-    BASE_URL: 'https://test-api.example.com',
+    BASE_URL: 'http://122.51.46.128:5432',
     TIMEOUT: 12000,
     DEBUG: true,
     LOG_LEVEL: 'info'
   },
   [ENV_TYPE.PROD]: {
-    BASE_URL: 'https://api.example.com',
+    BASE_URL: 'http://122.51.46.128:5432',
     TIMEOUT: 10000,
     DEBUG: false,
     LOG_LEVEL: 'error'

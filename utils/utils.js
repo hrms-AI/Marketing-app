@@ -21,7 +21,26 @@ export const storage = {
   get(key, defaultValue = null) {
     try {
       const value = uni.getStorageSync(key)
-      return value ? JSON.parse(value) : defaultValue
+      if (!value) {
+        return defaultValue
+      }
+      
+      // 如果值已经是对象类型，直接返回
+      if (typeof value === 'object') {
+        return value
+      }
+      
+      // 如果值是字符串，尝试解析JSON，如果解析失败则返回原字符串
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value)
+        } catch (parseError) {
+          // 如果JSON解析失败，说明这是一个普通字符串，直接返回
+          return value
+        }
+      }
+      
+      return value
     } catch (error) {
       console.error('存储获取失败:', error)
       return defaultValue
@@ -58,7 +77,12 @@ export const user = {
   
   // 设置Token
   setToken(token) {
-    storage.set(constants.STORAGE_KEYS.TOKEN, token)
+    // Token直接作为字符串存储，不需要JSON.stringify
+    try {
+      uni.setStorageSync(constants.STORAGE_KEYS.TOKEN, token)
+    } catch (error) {
+      console.error('Token设置失败:', error)
+    }
   },
   
   // 清除Token

@@ -1,8 +1,8 @@
 /**
  * 酒店选择和管理逻辑
- * 纯前端模式：使用本地模拟数据
+ * 优先调用真实API，失败时降级使用mock数据
  */
-// import { userApi } from '../utils/api' // 纯前端模式已注释
+import { userApi } from '../utils/api'
 
 export default {
   data() {
@@ -13,40 +13,72 @@ export default {
       selectedHotelIndex: 0,
       selectedHotelId: '',
       selectedHotelName: '',
-      
+
       // 用户信息
       userInfo: null
     }
   },
-  
+
+  computed: {
+    // 获取全局数据
+    globalData() {
+      return getApp().globalData
+    }
+  },
+
   methods: {
+    // 初始化全局酒店数据
+    initGlobalHotelData() {
+      // 从全局数据同步到组件
+      if (this.globalData.hotelList && this.globalData.hotelList.length > 0) {
+        this.hotelList = this.globalData.hotelList
+        this.hotelNames = this.hotelList.map(hotel => hotel.hotel_name || hotel.name || '未命名酒店')
+        console.log('✅ 从全局数据同步酒店列表:', this.hotelList.length, '家')
+      }
+
+      if (this.globalData.selectedHotelId) {
+        this.selectedHotelId = this.globalData.selectedHotelId
+        this.selectedHotelName = this.globalData.selectedHotelName
+        this.selectedHotelIndex = this.globalData.selectedHotelIndex
+        console.log('✅ 从全局数据同步选中酒店:', this.selectedHotelName)
+      }
+
+      if (this.globalData.userInfo) {
+        this.userInfo = this.globalData.userInfo
+      }
+    },
+
     // 酒店选择变化
     onHotelChange(e) {
       const index = e.detail.value
       this.selectedHotelIndex = index
-      
+
       if (this.hotelList && this.hotelList[index]) {
         const hotel = this.hotelList[index]
         this.selectedHotelId = hotel.hotel_id || hotel.id
         this.selectedHotelName = hotel.hotel_name || hotel.name
-        
+
         console.log('选中酒店:', {
           index,
           id: this.selectedHotelId,
           name: this.selectedHotelName
         })
-        
+
+        // 更新全局数据和本地存储
+        const app = getApp()
+        app.updateSelectedHotel(this.selectedHotelId, this.selectedHotelName, index)
+
         // 重新加载数据
         this.loadMarketingStats && this.loadMarketingStats()
       }
     },
     
-    // 加载酒店信息 - 纯前端模式
+    // 加载酒店信息 - 调用真实API
     async loadHotelInfo() {
       const userInfo = this.$utils.user.getUserInfo()
       this.userInfo = userInfo
       const userId = userInfo?.id || userInfo?.userId || userInfo?.user_id
-      
+
       if (!userId) {
         uni.showToast({
           title: '用户信息不完整，请重新登录',
@@ -55,28 +87,45 @@ export default {
         })
         return
       }
-      
+
       try {
         uni.showLoading({ title: '加载中...' })
-        // 纯前端模式：使用本地模拟数据
-        const res = await this.mockGetHotelInfo(userId)
-        
-        if (res && res.data && res.data.hotel_list) {
-          this.hotelList = res.data.hotel_list || []
+
+        console.log('🚀 正在调用真实API获取酒店列表...')
+        const hotelListData = await userApi.getHotelList({ page: 1, limit: 100 })
+        console.log('✅ API返回数据:', hotelListData)
+
+        if (hotelListData && hotelListData.items && hotelListData.items.length > 0) {
+          // API调用成功，使用真实数据
+          this.hotelList = hotelListData.items
+
+          // 更新全局数据和本地存储
+          const app = getApp()
+          app.updateHotelList(hotelListData.items, hotelListData.total)
+
+          console.log('✅ 使用真实API数据，共', hotelListData.total, '家酒店')
+        } else {
+          throw new Error('API返回数据为空')
+        }
+
+        // 处理酒店列表
+        if (this.hotelList && this.hotelList.length > 0) {
           this.hotelNames = this.hotelList.map(hotel => hotel.hotel_name || hotel.name || '未命名酒店')
-          
+
           // 默认选中第一个酒店
-          if (this.hotelList.length > 0) {
-            const firstHotel = this.hotelList[0]
-            this.selectedHotelId = firstHotel.hotel_id || firstHotel.id
-            this.selectedHotelName = firstHotel.hotel_name || firstHotel.name
-            this.selectedHotelIndex = 0
-            
-            console.log('默认选中第一个酒店:', {
-              id: this.selectedHotelId,
-              name: this.selectedHotelName
-            })
-          }
+          const firstHotel = this.hotelList[0]
+          this.selectedHotelId = firstHotel.hotel_id || firstHotel.id
+          this.selectedHotelName = firstHotel.hotel_name || firstHotel.name
+          this.selectedHotelIndex = 0
+
+          // 更新全局选中的酒店
+          const app = getApp()
+          app.updateSelectedHotel(this.selectedHotelId, this.selectedHotelName, 0)
+
+          console.log('✅ 默认选中第一个酒店:', {
+            id: this.selectedHotelId,
+            name: this.selectedHotelName
+          })
         } else {
           uni.showToast({
             title: '未获取到酒店信息',
@@ -84,84 +133,15 @@ export default {
           })
         }
       } catch (error) {
-        console.error('加载酒店信息失败:', error)
+        console.error('❌ 加载酒店信息失败:', error)
         uni.showToast({
-          title: '加载酒店信息失败',
-          icon: 'none'
+          title: '加载酒店信息失败，请检查网络连接',
+          icon: 'none',
+          duration: 3000
         })
       } finally {
         uni.hideLoading()
       }
-    },
-    
-    // 纯前端模式：模拟获取酒店信息
-    async mockGetHotelInfo(userId) {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // 模拟酒店数据
-          const mockHotelData = {
-            code: 200,
-            message: '获取成功',
-            data: {
-              hotel_list: [
-                {
-                  hotel_id: 'hotel_001',
-                  id: 'hotel_001',
-                  hotel_name: '北京王府井酒店',
-                  name: '北京王府井酒店',
-                  city: '北京',
-                  address: '北京市东城区王府井大街88号',
-                  star_level: 5,
-                  status: 'active'
-                },
-                {
-                  hotel_id: 'hotel_002', 
-                  id: 'hotel_002',
-                  hotel_name: '上海外滩精品酒店',
-                  name: '上海外滩精品酒店',
-                  city: '上海',
-                  address: '上海市黄浦区中山东一路99号',
-                  star_level: 4,
-                  status: 'active'
-                },
-                {
-                  hotel_id: 'hotel_003',
-                  id: 'hotel_003', 
-                  hotel_name: '广州天河商务酒店',
-                  name: '广州天河商务酒店',
-                  city: '广州',
-                  address: '广州市天河区珠江新城核心区',
-                  star_level: 4,
-                  status: 'active'
-                },
-                {
-                  hotel_id: 'hotel_004',
-                  id: 'hotel_004',
-                  hotel_name: '深圳福田国际酒店', 
-                  name: '深圳福田国际酒店',
-                  city: '深圳',
-                  address: '深圳市福田区深南大道2008号',
-                  star_level: 5,
-                  status: 'active'
-                },
-                {
-                  hotel_id: 'hotel_005',
-                  id: 'hotel_005',
-                  hotel_name: '成都春熙路酒店',
-                  name: '成都春熙路酒店', 
-                  city: '成都',
-                  address: '成都市锦江区春熙路南段8号',
-                  star_level: 4,
-                  status: 'active'
-                }
-              ]
-            }
-          }
-          
-          console.log('模拟酒店数据:', mockHotelData)
-          resolve(mockHotelData)
-        }, 500) // 模拟网络延迟
-      })
     }
   }
 }

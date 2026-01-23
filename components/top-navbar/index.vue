@@ -1,7 +1,7 @@
 <template>
   <view class="top-navbar" :style="{ top: statusBarHeight + 'px' }">
-    <view class="nav-left">
-      <text v-if="showBack" class="back-btn" @click="handleBack">‹</text>
+    <view class="nav-left" @click="handleBack">
+      <text v-if="showBack" class="back-btn">❮</text>
       <image v-else-if="showLogo" class="nav-logo" src="/static/logo.png" mode="aspectFit" />
     </view>
     <view class="nav-title">{{ title }}</view>
@@ -38,10 +38,41 @@ export default {
   },
   methods: {
     handleBack() {
+      console.log('点击返回按钮')
       this.$emit('back');
       if (!this.$listeners.back) {
-        uni.navigateBack();
+        // 获取当前页面栈
+        const pages = getCurrentPages();
+
+        // 如果页面栈大于1，正常返回
+        if (pages.length > 1) {
+          uni.navigateBack({
+            delta: 1,
+            fail: () => {
+              console.log('navigateBack失败，尝试跳转到首页')
+              this.goToHomePage();
+            }
+          });
+        } else {
+          // 如果页面栈只有1页，说明是首页或直接打开的页面，跳转到策略页
+          console.log('页面栈只有1页，跳转到策略页')
+          this.goToHomePage();
+        }
       }
+    },
+
+    goToHomePage() {
+      // 使用 reLaunch 清空页面栈并跳转到首页
+      uni.reLaunch({
+        url: '/pages/strategy/index',
+        fail: (err) => {
+          console.error('跳转首页失败:', err);
+          // 如果 reLaunch 失败，尝试 redirectTo
+          uni.redirectTo({
+            url: '/pages/strategy/index'
+          });
+        }
+      });
     }
   }
 }
@@ -61,21 +92,29 @@ export default {
   background: #f0f8ff;
 }
 .back-btn {
-  font-size: 54rpx;
-  color: #000;
-  font-weight: 300;
-  width: 60rpx;
-  text-align: left;
+  font-size: 48rpx;
+  color: #333;
+  font-weight: 500;
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 80rpx;
+  cursor: pointer;
 }
 .nav-left {
   position: absolute;
-  left: 32rpx;
+  left: 16rpx;
   top: 50%;
   transform: translateY(-50%);
-  width: 60rpx;
+  width: 80rpx;
+  height: 80rpx;
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
+  cursor: pointer;
+  z-index: 10;
 }
 .nav-logo {
   width: 54rpx;

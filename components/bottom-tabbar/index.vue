@@ -24,7 +24,7 @@ export default {
       type: Array,
       default: () => [
         { key: 'strategy', label: '营销内容', path: '/pages/strategy/index' },
-        { key: 'material', label: '营销素材', path: '/pages/team/index' },
+        { key: 'material', label: '营销素材', path: '/pages/material/index' },
         { key: 'report', label: '报告', path: '/pages/report/index' }
       ]
     }

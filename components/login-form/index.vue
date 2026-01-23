@@ -1,13 +1,5 @@
 <template>
   <view class="login-bg">
-    <!-- Logo区域 - 两种登录方式都显示 -->
-    <view class="login-logo-box">
-      <image src="/static/logo.png" class="login-logo" mode="aspectFit" />
-    </view>
-
-    <!-- 登录标题 - 两种登录方式都显示 -->
-    <view class="login-title">欢迎来到中旅集团</view>
-
     <!-- 登录方式切换 -->
     <view class="login-tabs">
       <view
@@ -24,6 +16,14 @@
       >
         微信快捷登录
       </view>
+    </view>
+
+    <!-- 登录标题 - 两种登录方式都显示 -->
+    <view class="login-title">欢迎来到中旅集团</view>
+
+    <!-- Logo区域 - 两种登录方式都显示 -->
+    <view class="login-logo-box">
+      <image src="/static/logo.png" class="login-logo" mode="aspectFit" />
     </view>
 
     <!-- 账号密码登录表单 -->
@@ -196,14 +196,37 @@ export default {
           return
         }
 
-        // 获取用户信息
-        const userData = await this.fetchUserInfo(code)
+        // 先查询用户是否存在
+        const userData = await this.handleQueryUserInfo()
         console.log('用户数据:', userData)
 
         if (userData && userData.token) {
-          // 已登录
-          console.log('用户已登录，存储用户信息')
-          this.performLogin(userData)
+          // 用户已存在且已登录
+          // 注意：响应拦截器已经自动存储了token和用户信息
+          // 这里只需要跳转到主页面
+          console.log('用户已登录，跳转到主页面')
+
+          uni.showToast({
+            title: '登录成功',
+            icon: 'success',
+            duration: 1500
+          })
+
+          // 快速跳转到首页，首页会自己加载酒店数据
+          setTimeout(() => {
+            uni.reLaunch({
+              url: '/pages/strategy/index',
+              fail: (err) => {
+                console.error('页面跳转失败：', err)
+              },
+              success: () => {
+                console.log('✅ 页面跳转成功')
+              }
+            })
+          }, 1500)
+        } else {
+          // 用户不存在，显示授权弹窗引导用户注册
+          console.log('用户未登录，等待注册')
         }
       } catch (error) {
         console.log('检查登录状态失败:', error)
@@ -260,25 +283,21 @@ export default {
           password: this.password
         })
 
-        console.log('登录接口返回结果:', token)
+        console.log('登录接口返回结果 - token类型:', typeof token)
+        console.log('登录接口返回结果 - token值:', token)
+        console.log('登录接口返回结果 - token是否为truthy:', !!token)
 
         if (token) {
           // 登录成功
-          console.log('登录成功！')
+          console.log('✅ 登录成功！准备跳转...')
 
-          // 保存token
-          uni.setStorageSync('token', token)
+          // 注意：响应拦截器已经自动存储了token和用户信息，这里不需要再存储
 
-          // 创建用户信息
-          const userData = {
-            userId: this.account,
-            username: this.account,
-            token: token,
-            loginTime: new Date().toISOString()
-          }
-
-          // 保存用户信息
-          uni.setStorageSync('userInfo', userData)
+          // 验证存储是否成功
+          const storedToken = uni.getStorageSync('token')
+          const storedUserInfo = uni.getStorageSync('userInfo')
+          console.log('存储的token:', storedToken)
+          console.log('存储的用户信息:', storedUserInfo)
 
           uni.showToast({
             title: '登录成功',
@@ -286,13 +305,22 @@ export default {
             duration: 1500
           })
 
-          // 跳转
+          // 快速跳转到首页，首页会自己加载酒店数据
           setTimeout(() => {
+            console.log('开始执行页面跳转...')
             uni.reLaunch({
-              url: '/pages/strategy/index'
+              url: '/pages/strategy/index',
+              success: () => {
+                console.log('✅ 页面跳转成功')
+              },
+              fail: (err) => {
+                console.error('❌ 页面跳转失败：', err)
+                console.error('错误详情：', JSON.stringify(err))
+              }
             })
           }, 1500)
         } else {
+          console.error('❌ token 为空或未定义')
           uni.showToast({
             title: '登录失败，请检查账号密码',
             icon: 'none',
@@ -373,30 +401,27 @@ export default {
     },
 
     /**
-     * 获取用户信息
-     */
-    async fetchUserInfo(code) {
-      try {
-        const res = await api.accountApi.wechatUserInfo({ code })
-        if (res && res.code === 200) {
-          return res.data
-        }
-        return null
-      } catch (error) {
-        console.log('获取用户信息失败:', error)
-        return null
-      }
-    },
-
-    /**
      * 查询用户信息（不需要code）
+     * 注意：如果用户已登录，响应拦截器会返回 token 字符串
+     * 如果用户未登录，会返回完整的响应对象（包含 code 和 data）
      */
     async handleQueryUserInfo() {
       try {
         const res = await api.accountApi.wechatUserInfo({})
+
+        // 如果返回的是 token 字符串，说明用户已登录，响应拦截器已经存储了 token 和用户信息
+        if (typeof res === 'string' && res.length > 0) {
+          console.log('用户已登录，token 已存储')
+          // 从本地存储中获取用户信息
+          const userInfo = uni.getStorageSync('userInfo')
+          return userInfo || { token: res }
+        }
+
+        // 如果返回的是对象，检查是否成功
         if (res && res.code === 200) {
           return res.data
         }
+
         return null
       } catch (error) {
         console.log('获取用户信息失败:', error)
@@ -418,8 +443,11 @@ export default {
       }
 
       this.isLoading = true
+      this.showAuthPopup = false
       try {
         const code = await this.getWxLoginCode()
+
+        // 调用注册接口
         const res = await api.accountApi.wechatRegister({
           avatar: this.userInfo.avatar,
           nickname: this.userInfo.nickname,
@@ -430,14 +458,27 @@ export default {
         console.log('注册返回:', res)
 
         if (res && res.code === 200) {
-          uni.setStorageSync('token', res.data.token)
+          uni.showToast({ title: '注册成功', icon: 'success' })
 
-          // 注册成功，获取用户信息
+          // 注册成功后，再次调用 wechat_user_info 获取用户信息
+          // 响应拦截器会自动存储token和用户信息
           const userData = await this.handleQueryUserInfo()
           console.log('注册后获取用户数据:', userData)
 
           if (userData && userData.token) {
-            this.performLogin(userData)
+            // 登录成功，跳转到主页面
+            setTimeout(() => {
+              // 快速跳转到首页，首页会自己加载酒店数据
+              uni.reLaunch({
+                url: '/pages/strategy/index',
+                fail: (err) => {
+                  console.error('页面跳转失败：', err)
+                },
+                success: () => {
+                  console.log('✅ 页面跳转成功')
+                }
+              })
+            }, 1500)
           } else {
             uni.showToast({ title: '登录失败，请重试', icon: 'none' })
           }
@@ -453,15 +494,23 @@ export default {
     },
 
     /**
-     * 执行登录（存储用户信息）
+     * 执行登录（存储用户信息并跳转）
+     * 注意：如果是从 wechat_user_info 返回的用户数据，
+     * 响应拦截器已经自动存储了token和用户信息
+     * 这里主要用于账号密码登录
      */
     performLogin(userData) {
-      uni.setStorageSync('token', userData.token)
-      uni.setStorageSync('userInfo', {
-        nickname: userData.nickname,
-        avatar_url: userData.avatar_url,
-        ...userData
-      })
+      // 检查是否已经存储过token
+      const existingToken = uni.getStorageSync('token')
+      if (!existingToken || existingToken !== userData.token) {
+        // 只有token不存在或不一致时才存储
+        uni.setStorageSync('token', userData.token)
+        uni.setStorageSync('userInfo', {
+          nickname: userData.nickname,
+          avatar_url: userData.avatar_url,
+          ...userData
+        })
+      }
 
       uni.showToast({ title: '登录成功', icon: 'success' })
 
@@ -535,13 +584,13 @@ export default {
   align-items: center;
   justify-content: flex-start;
   background: linear-gradient(180deg, #e8f4ff 0%, #f0f8ff 50%, $bg-white 100%);
-  padding: 20px;
+  padding: 40px 20px 20px;
   position: relative;
 }
 
 // Logo区域
 .login-logo-box {
-  margin-top: 80px;
+  margin-top: 20px;
   margin-bottom: 20px;
   display: flex;
   justify-content: center;
@@ -566,6 +615,7 @@ export default {
   display: flex;
   width: 80vw;
   max-width: 300px;
+  margin-top: 40px;
   margin-bottom: 30px;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 20px;

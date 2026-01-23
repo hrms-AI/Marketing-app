@@ -12,6 +12,20 @@ import http from './request.js'
  */
 export const userApi = {
   /**
+   * 获取酒店列表（分页）
+   * POST /api/u/hotel/list
+   */
+  getHotelList: (data = {}) => {
+    const params = {
+      page: data.page || 1,
+      limit: data.limit || 10,
+      keyword: data.keyword || ''
+    }
+    console.log('API层 - 调用获取酒店列表接口:', params)
+    return http.post('/api/u/hotel/list', params)
+  },
+
+  /**
    * 获取酒店详情
    * GET /api/u/query_hotel_all
    */
@@ -45,6 +59,45 @@ export const userApi = {
   getCalenderMarketing: (params) => {
     console.log('API层 - 调用获取日历营销计划接口:', params)
     return http.get('/api/u/calender_marketing', params)
+  },
+
+  /**
+   * 获取酒店素材列表（分页）
+   * POST /api/u/material/list
+   */
+  getMaterialList: (data = {}) => {
+    const params = {
+      page: data.page || 1,
+      limit: data.limit || 10,
+      hotel_id: data.hotel_id,
+      type: data.type || '', // image-图片，video-视频，text-文本
+      keyword: data.keyword || ''
+    }
+    console.log('API层 - 调用获取素材列表接口:', params)
+    return http.post('/api/u/material/list', params)
+  },
+
+  /**
+   * 获取酒店素材详情
+   * GET /api/u/material/info
+   */
+  getMaterialInfo: (data) => {
+    console.log('API层 - 调用获取素材详情接口:', data)
+    return http.get('/api/u/material/info', data)
+  },
+
+  /**
+   * 获取营销计划列表
+   * POST /api/u/marketing_plan/list
+   */
+  getMarketingPlanList: (data = {}) => {
+    const params = {
+      hotel_id: data.hotel_id || 0,
+      year: data.year || 0,
+      month: data.month || 0
+    }
+    console.log('API层 - 调用获取营销计划列表接口:', params)
+    return http.post('/api/u/marketing_plan/list', params)
   }
 }
 
@@ -54,14 +107,14 @@ export const userApi = {
 export const accountApi = {
   /**
    * 微信账户登录（账号密码方式）
-   * POST /api/account/wechat_login
+   * GET /api/account/wechat_login
    */
   login: (data) => {
     const loginData = {
       username: data.username,
       password: data.password
     }
-    return http.post('/api/account/wechat_login', loginData).then(response => {
+    return http.get('/api/account/wechat_login', loginData).then(response => {
       return response
     }).catch(error => {
       console.error('登录失败:', error)

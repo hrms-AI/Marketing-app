@@ -550,86 +550,235 @@ export default {
       this.planData.pendingTasks = pendingTasks;
     },
     
-    // 加载营销计划数据 (Mock 数据)
-    loadPlanData() {
-        console.log('=== 开始加载营销计划数据 ===');
-        
-        // 先生成每日计划
-        const dailyPlans = this.generateDailyPlans();
-        
-        console.log('生成的dailyPlans:', dailyPlans);
-        console.log('dailyPlans数量:', dailyPlans.length);
-        
-        // 计算实际的任务统计
-        let totalTasks = 0;
-        let completedTasks = 0;
-        let inProgressTasks = 0;
-        let pendingTasks = 0;
-        
-        dailyPlans.forEach((day, index) => {
-          if (day && day.tasks && Array.isArray(day.tasks)) {
-            console.log(`第${index + 1}天任务数:`, day.tasks.length);
-            day.tasks.forEach(task => {
-              totalTasks++;
-              if (task.status === '已完成') {
-                completedTasks++;
-              } else if (task.status === '进行中') {
-                inProgressTasks++;
-              } else {
-                pendingTasks++;
-              }
-            });
-          } else {
-            console.warn(`第${index + 1}天的数据异常:`, day);
-          }
+    // 加载营销计划数据
+    async loadPlanData() {
+      console.log('=== 开始加载营销计划数据 ===');
+      console.log('请求参数:', {
+        hotel_id: this.hotelId || 0,
+        year: this.year || 0,
+        month: this.month || 0
+      });
+
+      // 如果缺少参数，使用默认值
+      const hotelId = this.hotelId || 0;
+      const year = this.year || 0;
+      const month = this.month || 0;
+
+      try {
+        this.loading = true;
+        const { userApi } = require('@/utils/api.js');
+
+        // 调用真实API
+        const res = await userApi.getMarketingPlanList({
+          hotel_id: parseInt(hotelId),
+          year: parseInt(year),
+          month: parseInt(month)
         });
-        
-        console.log('任务统计 - 总数:', totalTasks, '已完成:', completedTasks, '进行中:', inProgressTasks, '待开始:', pendingTasks);
-        
-        this.planData = {
-          totalTasks,
-          completedTasks,
-          inProgressTasks,
-          pendingTasks,
-          
-          dailyPlans,
-          
-          metrics: [
-            {
-              icon: '👀',
-              name: '品牌曝光量',
-              current: '8.5万',
-              target: '10万',
-              progress: 85
-            },
-            {
-              icon: '📞',
-              name: '咨询转化量',
-              current: '156',
-              target: '200',
-              progress: 78
-            },
-            {
-              icon: '🏨',
-              name: '实际入住量',
-              current: '89',
-              target: '120',
-              progress: 74
-            },
-            {
-              icon: '💰',
-              name: '营销ROI',
-              current: '3.2',
-              target: '4.0',
-              progress: 80
+
+        console.log('API响应:', res);
+
+        if (res && res.code === 0 && res.data) {
+          // 处理真实API数据
+          this.processApiData(res.data);
+          console.log('✅ 营销计划数据加载成功');
+        } else {
+          throw new Error(res.msg || '获取数据失败');
+        }
+      } catch (error) {
+        console.error('❌ 获取营销计划失败:', error);
+        uni.showToast({
+          title: '加载失败，请重试',
+          icon: 'none',
+          duration: 2000
+        });
+        // API失败时加载mock数据作为后备
+        this.loadMockPlanData();
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 处理API返回的数据
+    processApiData(data) {
+      console.log('处理API数据:', data);
+
+      // 根据API返回的数据结构解析
+      // 这里假设API返回的数据格式需要适配到前端使用的数据结构
+      // 具体格式需要根据实际API返回调整
+
+      let dailyPlans = [];
+      let totalTasks = 0;
+      let completedTasks = 0;
+      let inProgressTasks = 0;
+      let pendingTasks = 0;
+
+      if (data.dailyPlans && Array.isArray(data.dailyPlans)) {
+        dailyPlans = data.dailyPlans;
+      } else if (data.list && Array.isArray(data.list)) {
+        // 如果API返回的是list格式，需要转换为dailyPlans格式
+        dailyPlans = this.convertListToDailyPlans(data.list);
+      } else {
+        // 如果API没有返回每日计划数据，生成空计划
+        dailyPlans = this.generateEmptyDailyPlans();
+      }
+
+      // 计算统计数据
+      dailyPlans.forEach(day => {
+        if (day.tasks && Array.isArray(day.tasks)) {
+          day.tasks.forEach(task => {
+            totalTasks++;
+            if (task.status === '已完成') {
+              completedTasks++;
+            } else if (task.status === '进行中') {
+              inProgressTasks++;
+            } else {
+              pendingTasks++;
             }
-          ]
-        };
-        
-      // 调试输出
-      console.log('planData loaded:', this.planData);
-      console.log('dailyPlans length:', this.planData.dailyPlans ? this.planData.dailyPlans.length : 'null');
-      console.log('total tasks:', this.getTotalDailyTasks());
+          });
+        }
+      });
+
+      // 处理关键指标数据
+      let metrics = [];
+      if (data.metrics && Array.isArray(data.metrics)) {
+        metrics = data.metrics;
+      } else {
+        // 使用默认指标
+        metrics = [
+          {
+            icon: '👀',
+            name: '品牌曝光量',
+            current: '0',
+            target: '0',
+            progress: 0
+          },
+          {
+            icon: '📞',
+            name: '咨询转化量',
+            current: '0',
+            target: '0',
+            progress: 0
+          },
+          {
+            icon: '🏨',
+            name: '实际入住量',
+            current: '0',
+            target: '0',
+            progress: 0
+          },
+          {
+            icon: '💰',
+            name: '营销ROI',
+            current: '0',
+            target: '0',
+            progress: 0
+          }
+        ];
+      }
+
+      this.planData = {
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        pendingTasks,
+        dailyPlans,
+        metrics
+      };
+
+      console.log('处理后的planData:', this.planData);
+      console.log('总任务数:', totalTasks);
+    },
+
+    // 将list格式转换为dailyPlans格式（如果API需要）
+    convertListToDailyPlans(list) {
+      // 这里需要根据实际API返回的数据格式进行转换
+      // 暂时返回空数组，实际使用时需要根据API格式调整
+      return list;
+    },
+
+    // 生成空的每日计划
+    generateEmptyDailyPlans() {
+      const year = parseInt(this.year) || new Date().getFullYear();
+      const month = parseInt(this.month) || new Date().getMonth() + 1;
+      const daysInMonth = this.getDaysInMonth(year, month);
+      const dailyPlans = [];
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const weekday = this.getWeekday(year, month, day);
+        dailyPlans.push({
+          day: day.toString().padStart(2, '0'),
+          weekday,
+          tasks: []
+        });
+      }
+
+      return dailyPlans;
+    },
+
+    // 加载Mock数据（作为后备方案）
+    loadMockPlanData() {
+      console.log('=== 加载Mock数据 ===');
+      const dailyPlans = this.generateDailyPlans();
+
+      let totalTasks = 0;
+      let completedTasks = 0;
+      let inProgressTasks = 0;
+      let pendingTasks = 0;
+
+      dailyPlans.forEach(day => {
+        if (day.tasks && Array.isArray(day.tasks)) {
+          day.tasks.forEach(task => {
+            totalTasks++;
+            if (task.status === '已完成') {
+              completedTasks++;
+            } else if (task.status === '进行中') {
+              inProgressTasks++;
+            } else {
+              pendingTasks++;
+            }
+          });
+        }
+      });
+
+      this.planData = {
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        pendingTasks,
+        dailyPlans,
+        metrics: [
+          {
+            icon: '👀',
+            name: '品牌曝光量',
+            current: '8.5万',
+            target: '10万',
+            progress: 85
+          },
+          {
+            icon: '📞',
+            name: '咨询转化量',
+            current: '156',
+            target: '200',
+            progress: 78
+          },
+          {
+            icon: '🏨',
+            name: '实际入住量',
+            current: '89',
+            target: '120',
+            progress: 74
+          },
+          {
+            icon: '💰',
+            name: '营销ROI',
+            current: '3.2',
+            target: '4.0',
+            progress: 80
+          }
+        ]
+      };
+
+      console.log('Mock数据加载完成:', this.planData);
     },
     
     // 生成每日营销计划

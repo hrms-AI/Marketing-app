@@ -153,18 +153,20 @@ class Request {
     // HTTP状态码检查
     if (statusCode === HTTP_STATUS.SUCCESS) {
       console.log('响应拦截器 - HTTP状态码200，数据:', data)
-      
-      // 检查业务状态码
-      if (data && data.code === 200 && data.success === true) {
+
+      // 检查业务状态码 - 兼容多种状态码格式
+      const isSuccess = (data && (data.code === 200 || data.code === 0))
+
+      if (isSuccess) {
         console.log('响应拦截器 - 业务成功，检查是否为登录接口')
-        
+
         // 检查是否为登录接口返回token
         if (data.data && data.data.token) {
           console.log('响应拦截器 - 检测到登录token:', data.data.token)
-          
+
           // 自动存储token
           uni.setStorageSync(constants.STORAGE_KEYS.TOKEN, data.data.token)
-          
+
           // 构造并存储用户信息
           const userInfo = {
             id: data.data.id || 'unknown',
@@ -176,14 +178,14 @@ class Request {
             token: data.data.token
           }
           uni.setStorageSync(constants.STORAGE_KEYS.USER_INFO, userInfo)
-          
+
           // 返回token给调用者
           return Promise.resolve(data.data.token)
         }
-        
+
         // 其他成功的业务接口，返回data部分
         return Promise.resolve(data.data || data)
-      } else if (data && data.code !== 200) {
+      } else if (data && data.code && data.code !== 200 && data.code !== 0) {
         // 业务逻辑错误
         console.error('响应拦截器 - 业务错误:', data)
         return Promise.reject(data)
