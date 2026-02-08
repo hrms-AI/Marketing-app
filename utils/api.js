@@ -92,9 +92,10 @@ export const userApi = {
    */
   getMarketingPlanList: (data = {}) => {
     const params = {
-      hotel_id: data.hotel_id || 0,
-      year: data.year || 0,
-      month: data.month || 0
+      hotel_id: String(data.hotel_id || '0'),
+      year: String(data.year || '0'),
+      month: String(data.month || '0'),
+      type: String(data.type || '0')
     }
     console.log('API层 - 调用获取营销计划列表接口:', params)
     return http.post('/api/u/marketing_plan/list', params)
@@ -106,20 +107,16 @@ export const userApi = {
  */
 export const accountApi = {
   /**
-   * 微信账户登录（账号密码方式）
-   * GET /api/account/wechat_login
+   * 账户登录
+   * POST /api/account/login
    */
   login: (data) => {
     const loginData = {
       username: data.username,
       password: data.password
     }
-    return http.get('/api/account/wechat_login', loginData).then(response => {
-      return response
-    }).catch(error => {
-      console.error('登录失败:', error)
-      throw error
-    })
+    console.log('API层 - 调用登录接口:', loginData)
+    return http.post('/api/account/login', loginData)
   },
 
   /**

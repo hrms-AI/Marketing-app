@@ -30,7 +30,7 @@
         <view class="plan-overview">
           <view class="overview-title">计划概览</view>
           <view class="overview-stats">
-            <view 
+            <view
               class="stat-item"
               :class="{ active: currentFilter === 'all' }"
               @click="filterTasks('all')"
@@ -38,28 +38,28 @@
               <text class="stat-number">{{ planData.totalTasks }}</text>
               <text class="stat-label">总任务数</text>
             </view>
-            <view 
+            <view
               class="stat-item"
               :class="{ active: currentFilter === 'completed' }"
               @click="filterTasks('completed')"
             >
-              <text class="stat-number">{{ planData.completedTasks }}</text>
+              <text class="stat-number">{{ planData.approvedTasks }}</text>
               <text class="stat-label">已完成</text>
             </view>
-            <view 
+            <view
               class="stat-item"
               :class="{ active: currentFilter === 'in-progress' }"
               @click="filterTasks('in-progress')"
             >
-              <text class="stat-number">{{ planData.inProgressTasks }}</text>
+              <text class="stat-number">{{ planData.waitingApprovalTasks }}</text>
               <text class="stat-label">待审核</text>
             </view>
-            <view 
+            <view
               class="stat-item"
               :class="{ active: currentFilter === 'pending' }"
               @click="filterTasks('pending')"
             >
-              <text class="stat-number">{{ planData.pendingTasks }}</text>
+              <text class="stat-number">{{ planData.rejectedTasks }}</text>
               <text class="stat-label">待开始</text>
             </view>
           </view>
@@ -237,9 +237,10 @@ export default {
       selectedTasksForReview: [], // 选中待审核的任务
       planData: {
         totalTasks: 0,
-        completedTasks: 0,
-        inProgressTasks: 0,
-        pendingTasks: 0,
+        waitingApprovalTasks: 0, // 等待审核 (approval_status=0)
+        approvedTasks: 0,        // 已审核 (approval_status=1)
+        rejectedTasks: 0,        // 已拒绝 (approval_status=2)
+        abandonedTasks: 0,       // 已废弃 (type=7)
         dailyPlans: [],
         metrics: []
       }
@@ -252,25 +253,25 @@ export default {
       if (!this.planData.dailyPlans || this.currentFilter === 'all') {
         return this.planData.dailyPlans || [];
       }
-      
+
       return this.planData.dailyPlans.map(dayPlan => {
         if (!dayPlan.tasks) {
           return { ...dayPlan, tasks: [] };
         }
-        
+
         const filteredTasks = dayPlan.tasks.filter(task => {
           switch (this.currentFilter) {
             case 'completed':
-              return task.status === '已完成';
+              return task.approvalStatus === 1; // 已完成对应approval_status=1
             case 'in-progress':
-              return task.status === '进行中';
+              return task.approvalStatus === 0; // 待审核对应approval_status=0
             case 'pending':
-              return task.status === '待执行';
+              return task.approvalStatus === 2; // 待开始对应approval_status=2
             default:
               return true;
           }
         });
-        
+
         return {
           ...dayPlan,
           tasks: filteredTasks
@@ -306,13 +307,13 @@ export default {
     // 过滤任务
     filterTasks(filterType) {
       this.currentFilter = filterType;
-      
+
       // 切换过滤条件时退出批量审核模式
       if (this.batchReviewMode) {
         this.batchReviewMode = false;
         this.selectedTasksForReview = [];
       }
-      
+
       // 显示过滤提示
       let filterText = '';
       switch (filterType) {
@@ -323,13 +324,13 @@ export default {
           filterText = '显示已完成任务';
           break;
         case 'in-progress':
-          filterText = '显示进行中任务';
+          filterText = '显示待审核任务';
           break;
         case 'pending':
           filterText = '显示待开始任务';
           break;
       }
-      
+
       uni.showToast({
         title: filterText,
         icon: 'none',
@@ -568,21 +569,22 @@ export default {
         this.loading = true;
         const { userApi } = require('@/utils/api.js');
 
-        // 调用真实API
+        // 调用真实API - 参数使用字符串类型
         const res = await userApi.getMarketingPlanList({
-          hotel_id: parseInt(hotelId),
-          year: parseInt(year),
-          month: parseInt(month)
+          hotel_id: String(hotelId),
+          year: String(year),
+          month: String(month)
         });
 
         console.log('API响应:', res);
 
-        if (res && res.code === 0 && res.data) {
+        // 响应拦截器已经返回了data.data，所以直接使用res
+        if (res) {
           // 处理真实API数据
-          this.processApiData(res.data);
+          this.processApiData(res);
           console.log('✅ 营销计划数据加载成功');
         } else {
-          throw new Error(res.msg || '获取数据失败');
+          throw new Error('获取数据失败');
         }
       } catch (error) {
         console.error('❌ 获取营销计划失败:', error);
@@ -601,24 +603,43 @@ export default {
     // 处理API返回的数据
     processApiData(data) {
       console.log('处理API数据:', data);
-
-      // 根据API返回的数据结构解析
-      // 这里假设API返回的数据格式需要适配到前端使用的数据结构
-      // 具体格式需要根据实际API返回调整
+      console.log('数据类型:', typeof data);
+      console.log('是否为数组:', Array.isArray(data));
+      console.log('是否有dailyPlans:', data?.dailyPlans);
+      console.log('是否有list:', data?.list);
+      console.log('数据keys:', data ? Object.keys(data) : 'null');
 
       let dailyPlans = [];
       let totalTasks = 0;
       let completedTasks = 0;
       let inProgressTasks = 0;
       let pendingTasks = 0;
+      let waitingApprovalTasks = 0;
+      let approvedTasks = 0;
+      let rejectedTasks = 0;
+      let abandonedTasks = 0;
 
-      if (data.dailyPlans && Array.isArray(data.dailyPlans)) {
-        dailyPlans = data.dailyPlans;
-      } else if (data.list && Array.isArray(data.list)) {
-        // 如果API返回的是list格式，需要转换为dailyPlans格式
-        dailyPlans = this.convertListToDailyPlans(data.list);
+      // 兼容多种API返回格式
+      if (data) {
+        if (Array.isArray(data.dailyPlans)) {
+          dailyPlans = data.dailyPlans;
+          console.log('使用dailyPlans格式，数量:', dailyPlans.length);
+        } else if (Array.isArray(data.list)) {
+          // 如果API返回的是list格式，需要转换为dailyPlans格式
+          dailyPlans = this.convertListToDailyPlans(data.list);
+          console.log('使用list格式，转换后数量:', dailyPlans.length);
+        } else if (Array.isArray(data)) {
+          // 直接返回数组的情况
+          dailyPlans = data;
+          console.log('直接使用数组格式，数量:', dailyPlans.length);
+        } else {
+          // 处理以日期为key的对象格式：{"2026-02-01": [...], "2026-02-02": [...]}
+          console.log('检测到日期对象格式，开始转换...');
+          dailyPlans = this.convertDateObjectToDailyPlans(data);
+          console.log('转换后dailyPlans数量:', dailyPlans.length);
+        }
       } else {
-        // 如果API没有返回每日计划数据，生成空计划
+        console.log('数据为空，生成空计划');
         dailyPlans = this.generateEmptyDailyPlans();
       }
 
@@ -627,12 +648,19 @@ export default {
         if (day.tasks && Array.isArray(day.tasks)) {
           day.tasks.forEach(task => {
             totalTasks++;
-            if (task.status === '已完成') {
-              completedTasks++;
-            } else if (task.status === '进行中') {
-              inProgressTasks++;
-            } else {
-              pendingTasks++;
+            // 根据 approvalStatus 和 type 统计
+            if (task.type === 7) {
+              // 已废弃
+              abandonedTasks++;
+            } else if (task.approvalStatus === 0) {
+              // 等待审核
+              waitingApprovalTasks++;
+            } else if (task.approvalStatus === 1) {
+              // 已审核
+              approvedTasks++;
+            } else if (task.approvalStatus === 2) {
+              // 已拒绝
+              rejectedTasks++;
             }
           });
         }
@@ -678,15 +706,153 @@ export default {
 
       this.planData = {
         totalTasks,
-        completedTasks,
-        inProgressTasks,
-        pendingTasks,
+        waitingApprovalTasks,
+        approvedTasks,
+        rejectedTasks,
+        abandonedTasks,
         dailyPlans,
         metrics
       };
 
       console.log('处理后的planData:', this.planData);
       console.log('总任务数:', totalTasks);
+    },
+
+    // 将日期对象格式转换为dailyPlans格式
+    convertDateObjectToDailyPlans(dateObject) {
+      console.log('开始转换日期对象格式:', dateObject);
+
+      if (!dateObject || typeof dateObject !== 'object') {
+        console.warn('日期对象数据无效');
+        return [];
+      }
+
+      const dailyPlans = [];
+
+      // 遍历日期key（格式：YYYY-MM-DD）
+      const dateKeys = Object.keys(dateObject).sort();
+      console.log('找到日期keys:', dateKeys);
+
+      dateKeys.forEach(dateKey => {
+        try {
+          // 解析日期 "2026-02-01"
+          const dateMatch = dateKey.match(/(\d{4})-(\d{2})-(\d{2})/);
+          if (!dateMatch) {
+            console.warn('跳过无效的日期格式:', dateKey);
+            return;
+          }
+
+          const [, year, month, day] = dateMatch;
+          const dayNum = parseInt(day, 10);
+          const monthNum = parseInt(month, 10);
+          const yearNum = parseInt(year, 10);
+
+          // 计算星期几
+          const date = new Date(yearNum, monthNum - 1, dayNum);
+          const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+          const weekday = weekdays[date.getDay()];
+
+          // 获取该日期的计划列表
+          const plans = dateObject[dateKey];
+          if (!Array.isArray(plans) || plans.length === 0) {
+            // 没有计划的日期也添加，保持空任务列表
+            dailyPlans.push({
+              day: day,
+              weekday: weekday,
+              tasks: []
+            });
+            return;
+          }
+
+          // 转换计划为任务格式
+          const tasks = plans.map(plan => {
+            // 根据API返回的字段映射到任务对象
+            const task = {
+              id: plan.plan_id || plan.id,
+              time: plan.execute_time || plan.time || '00:00',
+              icon: this.getTaskIcon(plan.plan_type || plan.type),
+              title: plan.marketing_plan_name || plan.plan_name || plan.name || '未命名计划',
+              description: plan.description || plan.desc || plan.content || '暂无描述',
+              // 保存原始状态值用于筛选 - 确保type字段正确处理，包括type=0
+              approvalStatus: plan.approval_status !== undefined ? parseInt(plan.approval_status) : 0,
+              type: plan.type !== undefined ? parseInt(plan.type) : 0,
+              // 显示用的状态文本
+              status: this.formatTaskStatus(plan.approval_status, plan.type),
+              statusClass: this.getStatusClassFromApprovalStatus(plan.approval_status, plan.type),
+              channels: plan.channels || plan.channel ? (Array.isArray(plan.channels) ? plan.channels : [plan.channel]) : []
+            };
+
+            console.log('转换任务:', task);
+            return task;
+          });
+
+          // 添加到dailyPlans
+          dailyPlans.push({
+            day: day,
+            weekday: weekday,
+            tasks: tasks
+          });
+
+          console.log(`✅ 转换日期 ${dateKey} (${weekday}): ${tasks.length}个任务`);
+
+        } catch (error) {
+          console.error('转换日期出错:', dateKey, error);
+        }
+      });
+
+      console.log('✅ 日期对象转换完成，共', dailyPlans.length, '天');
+      return dailyPlans;
+    },
+
+    // 获取任务图标
+    getTaskIcon(planType) {
+      const iconMap = {
+        0: '📅', // type=0 的默认图标
+        'content': '📝',
+        'social_media': '📱',
+        'video': '🎬',
+        'promotion': '🎯',
+        'customer_service': '💬',
+        'data_analysis': '📊',
+        'default': '📅'
+      };
+      return iconMap[planType] || iconMap['default'];
+    },
+
+    // 格式化任务状态 - 基于 approval_status 和 type
+    formatTaskStatus(approvalStatus, type) {
+      // 如果 type 为 7，表示已废弃
+      if (type !== undefined && parseInt(type) === 7) {
+        return '已废弃';
+      }
+
+      // 根据 approval_status 映射状态，包括处理 type=0 的情况
+      const status = parseInt(approvalStatus);
+      const statusMap = {
+        0: '等待审核',
+        1: '已审核',
+        2: '已拒绝'
+      };
+
+      return statusMap[status] || '等待审核';
+    },
+
+    // 根据 approval_status 和 type 获取状态样式类名
+    getStatusClassFromApprovalStatus(approvalStatus, type) {
+      // 如果 type 为 7，表示已废弃
+      if (type !== undefined && parseInt(type) === 7) {
+        return 'abandoned';
+      }
+
+      // 对于 type=0 等其他情况，根据 approval_status 返回对应类名
+      const status = parseInt(approvalStatus);
+      const classMap = {
+        0: 'waiting',     // 等待审核
+        1: 'approved',    // 已审核
+        2: 'rejected'     // 已拒绝
+      };
+
+      return classMap[status] || 'waiting';
     },
 
     // 将list格式转换为dailyPlans格式（如果API需要）
@@ -1200,7 +1366,7 @@ export default {
         case 'completed':
           return '已完成';
         case 'in-progress':
-          return '进行中';
+          return '待审核';
         case 'pending':
           return '待开始';
         default:

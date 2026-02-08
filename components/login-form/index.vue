@@ -165,8 +165,13 @@ export default {
 
   mounted() {
     console.log('登录组件已挂载')
-    // 检查是否已登录
-    this.checkLoginStatus()
+    // 自动填充测试账号
+    this.loginType = 'password'
+    this.account = 'cyh'
+    this.password = '123456'
+    this.isAgreed = true
+    console.log('✅ 已自动填充测试账号: cyh / 123456')
+    // 不再自动检查登录状态，等待用户手动点击登录
   },
 
   methods: {

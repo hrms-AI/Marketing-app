@@ -138,7 +138,7 @@ export default {
       marketingPlans: []
     }
   },
-  mounted() {    
+  async mounted() {
     try {
       // 检查登录状态
       const token = this.$utils?.user?.getToken ? this.$utils.user.getToken() : uni.getStorageSync('token');
@@ -148,13 +148,15 @@ export default {
         });
         return;
       }
-      
+
       // 初始化当前日期
       this.initCurrentDate();
-      // 加载酒店信息
-      this.loadHotelInfo();
-      // 加载营销计划统计
-      this.loadMarketingStats();
+
+      // 加载酒店信息（等待完成）
+      await this.loadHotelInfo();
+
+      // 加载营销计划统计（酒店信息加载完成后）
+      await this.loadMarketingStats();
     } catch (error) {
       console.error('页面初始化错误:', error);
     }

@@ -353,12 +353,13 @@ export default {
           keyword: this.searchKeyword || undefined // 传递搜索关键词
         })
 
-        if (res.code === 0) {
-          this.materialList = res.data.items || []
-          this.pagination.total = res.data.total || 0
+        // 响应拦截器已经返回了data.data
+        if (res && Array.isArray(res.items)) {
+          this.materialList = res.items || []
+          this.pagination.total = res.total || 0
         } else {
           uni.showToast({
-            title: res.msg || '加载失败',
+            title: '加载失败',
             icon: 'none'
           })
         }
@@ -613,8 +614,9 @@ export default {
           hotel_id: this.selectedHotelId
         })
 
-        if (detail && detail.code === 0) {
-          this.currentMaterial = detail.data || item
+        // 响应拦截器已经返回了data.data
+        if (detail) {
+          this.currentMaterial = detail || item
           this.detailVisible = true
         } else {
           // 接口失败，使用列表中的数据

@@ -58,14 +58,6 @@
       }
     },
     {
-      "path": "pages/test/api-test",
-      "style": {
-        "navigationBarTitleText": "API接口测试",
-        "navigationBarTextStyle": "black",
-        "navigationBarBackgroundColor": "#f8f8f8"
-      }
-    },
-    {
       "path": "pages/team/inquiry",
       "style": {
         "navigationBarTitleText": "团队询价",

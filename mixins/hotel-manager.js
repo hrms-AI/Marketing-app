@@ -94,18 +94,45 @@ export default {
         console.log('🚀 正在调用真实API获取酒店列表...')
         const hotelListData = await userApi.getHotelList({ page: 1, limit: 100 })
         console.log('✅ API返回数据:', hotelListData)
+        console.log('✅ 数据类型:', typeof hotelListData)
+        console.log('✅ 是否有items:', hotelListData?.items)
+        console.log('✅ 是否有list:', hotelListData?.list)
+        console.log('✅ 是否有data:', hotelListData?.data)
 
-        if (hotelListData && hotelListData.items && hotelListData.items.length > 0) {
+        // 兼容多种API返回格式
+        let items = null
+        let total = 0
+
+        if (hotelListData) {
+          // 尝试获取items
+          if (Array.isArray(hotelListData.items)) {
+            items = hotelListData.items
+            total = hotelListData.total || hotelListData.items.length
+          } else if (Array.isArray(hotelListData.list)) {
+            items = hotelListData.list
+            total = hotelListData.total || hotelListData.list.length
+          } else if (Array.isArray(hotelListData.data)) {
+            // API返回格式：{data: [...], total: 2}
+            items = hotelListData.data
+            total = hotelListData.total || hotelListData.data.length
+          } else if (Array.isArray(hotelListData)) {
+            // 直接返回数组的情况
+            items = hotelListData
+            total = hotelListData.length
+          }
+        }
+
+        if (items && items.length > 0) {
           // API调用成功，使用真实数据
-          this.hotelList = hotelListData.items
+          this.hotelList = items
 
           // 更新全局数据和本地存储
           const app = getApp()
-          app.updateHotelList(hotelListData.items, hotelListData.total)
+          app.updateHotelList(items, total)
 
-          console.log('✅ 使用真实API数据，共', hotelListData.total, '家酒店')
+          console.log('✅ 使用真实API数据，共', total, '家酒店')
         } else {
-          throw new Error('API返回数据为空')
+          throw new Error('API返回数据为空或格式不正确')
         }
 
         // 处理酒店列表

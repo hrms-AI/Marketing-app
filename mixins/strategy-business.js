@@ -64,12 +64,13 @@ export default {
     handleViewPlan() {
       console.log('业务逻辑：收到查看营销计划事件')
       console.log('当前年月:', this.selectedYear, this.selectedMonth)
-      
-      // 跳转到营销计划详情页面
+      console.log('当前酒店ID:', this.selectedHotelId)
+
+      // 跳转到营销计划详情页面，传递所有必要参数
       uni.navigateTo({
-        url: `/pages/marketing-plan/index?year=${this.selectedYear}&month=${this.selectedMonth}&hotelName=${encodeURIComponent(this.selectedHotelName || '当前酒店')}`
+        url: `/pages/marketing-plan/index?hotelId=${this.selectedHotelId}&year=${this.selectedYear}&month=${this.selectedMonth}&hotelName=${encodeURIComponent(this.selectedHotelName || '当前酒店')}`
       })
-      
+
       console.log('业务逻辑：已跳转到营销计划页面')
     },
     
@@ -348,12 +349,74 @@ export default {
     
     // 加载营销计划统计数据
     async loadMarketingStats() {
+      console.log('=== 开始加载营销计划统计 ===');
+
+      // 如果没有酒店ID，跳过加载
+      if (!this.selectedHotelId) {
+        console.log('酒店ID为空，跳过统计加载');
+        return;
+      }
+
       try {
-        this.scheduledTasksCount = Math.floor(Math.random() * 20 + 10)
-        this.pendingTasksCount = Math.floor(Math.random() * 5 + 2)
-        this.publishedTasksCount = Math.floor(Math.random() * 15 + 8)
+        const { userApi } = require('../../utils/api.js');
+
+        // 调用API获取当前年月的营销计划数据
+        const res = await userApi.getMarketingPlanList({
+          hotel_id: String(this.selectedHotelId),
+          year: String(this.selectedYear),
+          month: String(this.selectedMonth),
+          type: '0'
+        });
+
+        console.log('API返回数据:', res);
+
+        // 初始化统计值
+        let scheduledCount = 0;    // 排期任务（总任务数）
+        let pendingCount = 0;      // 待审核 (approval_status=0)
+        let publishedCount = 0;    // 已发布 (approval_status=1)
+
+        // 处理日期对象格式数据 {"2026-02-01": [...], ...}
+        if (res && typeof res === 'object' && !Array.isArray(res)) {
+          const dateKeys = Object.keys(res);
+
+          dateKeys.forEach(dateKey => {
+            const plans = res[dateKey];
+            if (Array.isArray(plans)) {
+              plans.forEach(plan => {
+                // 统计总任务数
+                scheduledCount++;
+
+                // 根据 approval_status 统计
+                const approvalStatus = parseInt(plan.approval_status || 0);
+                if (approvalStatus === 0) {
+                  // 等待审核
+                  pendingCount++;
+                } else if (approvalStatus === 1) {
+                  // 已审核（已发布）
+                  publishedCount++;
+                }
+              });
+            }
+          });
+        }
+
+        // 更新统计数据
+        this.scheduledTasksCount = scheduledCount;
+        this.pendingTasksCount = pendingCount;
+        this.publishedTasksCount = publishedCount;
+
+        console.log('✅ 营销计划统计加载成功:', {
+          排期任务: scheduledCount,
+          待审核: pendingCount,
+          已发布: publishedCount
+        });
+
       } catch (error) {
-        console.error('加载统计数据失败:', error)
+        console.error('❌ 加载统计数据失败:', error);
+        // 失败时使用默认值
+        this.scheduledTasksCount = 0;
+        this.pendingTasksCount = 0;
+        this.publishedTasksCount = 0;
       }
     }
   }

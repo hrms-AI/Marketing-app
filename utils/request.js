@@ -143,26 +143,32 @@ class Request {
    * @param {Object} response 响应数据
    */
   responseInterceptor(response) {
+    console.log('========== 响应拦截器开始 ==========')
     console.log('响应拦截器 - 原始响应:', response)
-    
+
     // 隐藏加载提示
     uni.hideLoading()
 
     const { statusCode, data } = response
+    console.log('HTTP状态码:', statusCode)
+    console.log('响应数据:', data)
+    console.log('响应数据类型:', typeof data)
 
     // HTTP状态码检查
     if (statusCode === HTTP_STATUS.SUCCESS) {
-      console.log('响应拦截器 - HTTP状态码200，数据:', data)
+      console.log('✅ HTTP状态码200')
 
       // 检查业务状态码 - 兼容多种状态码格式
-      const isSuccess = (data && (data.code === 200 || data.code === 0))
+      const code = data?.code
+      console.log('业务状态码:', code)
+      const isSuccess = (data && (code === 200 || code === 0))
 
       if (isSuccess) {
-        console.log('响应拦截器 - 业务成功，检查是否为登录接口')
+        console.log('✅ 业务成功，返回数据部分')
 
         // 检查是否为登录接口返回token
         if (data.data && data.data.token) {
-          console.log('响应拦截器 - 检测到登录token:', data.data.token)
+          console.log('✅ 检测到登录token:', data.data.token)
 
           // 自动存储token
           uni.setStorageSync(constants.STORAGE_KEYS.TOKEN, data.data.token)
@@ -179,23 +185,32 @@ class Request {
           }
           uni.setStorageSync(constants.STORAGE_KEYS.USER_INFO, userInfo)
 
+          console.log('✅ 返回token给调用者')
           // 返回token给调用者
           return Promise.resolve(data.data.token)
         }
 
         // 其他成功的业务接口，返回data部分
-        return Promise.resolve(data.data || data)
-      } else if (data && data.code && data.code !== 200 && data.code !== 0) {
+        const result = data.data !== undefined ? data.data : data
+        console.log('✅ 返回数据:', result)
+        console.log('========== 响应拦截器结束 ==========')
+        return Promise.resolve(result)
+      } else if (data && code && code !== 200 && code !== 0) {
         // 业务逻辑错误
-        console.error('响应拦截器 - 业务错误:', data)
+        console.error('❌ 业务错误 - code:', code, 'message:', data.message || data.msg)
+        console.error('❌ 完整错误数据:', data)
+        console.log('========== 响应拦截器结束 ==========')
         return Promise.reject(data)
       } else {
         // 其他情况，直接返回数据
+        console.log('⚠️ 其他情况，直接返回数据:', data)
+        console.log('========== 响应拦截器结束 ==========')
         return Promise.resolve(data)
       }
     } else {
       // HTTP状态码错误
-      console.error('响应拦截器 - HTTP错误:', statusCode, data)
+      console.error('❌ HTTP错误 - 状态码:', statusCode, '数据:', data)
+      console.log('========== 响应拦截器结束 ==========')
       return Promise.reject(response)
     }
   }
